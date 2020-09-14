@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <node pkg="local_planning_test" name="test" type="test" output="screen">
+  </node>
+</launch>
+

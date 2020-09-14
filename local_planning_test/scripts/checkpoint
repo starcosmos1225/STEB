@@ -1,0 +1,2 @@
+model_checkpoint_path: "/home/hxj/tool/ros_husky_ws/src/robottest/scripts/model"
+all_model_checkpoint_paths: "/home/hxj/tool/ros_husky_ws/src/robottest/scripts/model"

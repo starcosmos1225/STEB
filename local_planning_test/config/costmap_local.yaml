@@ -1,0 +1,9 @@
+global_frame: h1/map
+rolling_window: true
+update_frequency: 15.0
+publish_frequency: 5.0
+static_map: false
+
+plugins:
+  - {name: obstacles_laser,           type: "costmap_2d::ObstacleLayer"}
+  - {name: inflation,                 type: "costmap_2d::InflationLayer"}

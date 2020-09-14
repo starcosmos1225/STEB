@@ -1,0 +1,152 @@
+GlobalPlanner:
+ use_dijkstra: true
+ use_grid_path: false
+ publish_potential: false
+ default_path: [[0.010055168084, -0.0187449957447, -0.000314985059848, 0.0012048533251, 0.964085204625, 0.265590224474],
+[-0.197565479969, 0.102157580505, 0.000154397857378, -4.30568420068e-06, 0.962680995311, 0.270638647294],
+[-0.437138014417, 0.225077450182, -0.000108060489657, 0.000104428719152, 0.961840504768, 0.273610710327],
+[-0.697284745681, 0.367719386068, 0.000399887859237, -8.05638565492e-05, 0.962078972381, 0.272770754483],
+[-0.921797951977, 0.480267808832, -0.000507902784415, 0.000298230288429, 0.968666925378, 0.248362720174],
+[-1.18393101574, 0.594950354794, -0.000152465779392, 0.00022099026422, 0.992633195158, 0.121158028164],
+[-1.47598433464, 0.620256089717, -0.000346185465329, 9.35774590662e-05, 0.999961298144, -0.00879054107875],
+[-1.76843553314, 0.584712247069, 0.000289097850242, -0.000122734309251, 0.996583131516, -0.0825951774388],
+[-2.25307896235, 0.497674233034, 5.33302509347e-06, 0.00121771910339, 0.996828776867, -0.0795669953034],
+[-2.8288369996, 0.417649563549, 0.000174683497425, 7.29858784311e-06, 0.998311458629, -0.0580878731107],
+[-3.43695414281, 0.411402923247, 0.000399768046867, -0.000160692530163, 0.997003044822, 0.0773611205889],
+[-4.02615504066, 0.608355295338, -1.14095980368e-05, 0.000106645374028, 0.972662776051, 0.23222211906],
+[-4.5586710068, 0.89144523483, -0.000105113826205, -3.78125142823e-05, 0.968843200319, 0.247674868964],
+[-5.08799593121, 1.18833128117, 3.48140953543e-05, -3.29268082099e-05, 0.96897715622, 0.247150295219],
+[-5.61385732662, 1.48086489326, 2.13670268775e-05, 5.10701888974e-05, 0.969469335248, 0.245212570945],
+[-6.13079843805, 1.76146920006, 3.21070844599e-05, 9.07709969005e-05, 0.969684358391, 0.244360872117],
+[-6.65901574741, 2.05267927967, 9.12259861538e-05, 4.18585052407e-05, 0.969280369723, 0.245958441196],
+[-7.16588762216, 2.37539117007, 1.50784427144e-05, -4.29772400869e-06, 0.946274960246, 0.323363107613],
+[-7.58364443063, 2.7950878533, -1.75256559241e-05, -2.55030289802e-06, 0.897675891804, 0.440656320685],
+[-7.92558272522, 3.27454226855, 1.19338436613e-05, 2.27777761742e-05, 0.893525181384, 0.449013083965],
+[-8.2793662285, 3.76189943432, 5.09120372873e-05, -9.96331826239e-06, 0.893480554319, 0.449101877486],
+[-8.6307121454, 4.23771429585, -4.75561253825e-06, 1.27975158065e-05, 0.896976463069, 0.442078301338],
+[-9.04062069823, 4.68179833652, -0.000179387660097, 0.00011285650625, 0.934796150948, 0.355184615736],
+[-9.51362702391, 5.05479456719, -7.72291063261e-05, 2.1799357887e-06, 0.952988181135, 0.303007459723],
+[-10.0058566881, 5.40291585409, -5.7961161773e-05, 2.98454140534e-05, 0.954271512261, 0.298941259508],
+[-10.504321835, 5.72419069291, 6.73613088734e-06, 3.10004776516e-06, 0.966551184069, 0.256473796946],
+[-11.0485515516, 5.96033072714, 4.62967859964e-05, -2.23053913746e-05, 0.988108009164, 0.153761372215],
+[-11.7654937056, 6.102325475, -0.00012559953535, -3.11802956669e-07, 0.998667612099, 0.051604115818],
+[-12.5731022568, 6.16750244431, 1.62908693337e-05, -1.69806169407e-05, 0.999407602607, 0.0344157419977],
+[-13.3736649059, 6.22503621279, -3.51409174352e-05, 3.15609154628e-05, 0.999489894924, 0.0319366202553],
+[-14.1829340734, 6.27114014918, -4.98582120084e-05, 2.73835744786e-05, 0.99954875252, 0.0300381107842],
+[-14.8891968503, 6.30683680562, -0.000240158536788, -2.47268136744e-05, 0.999589003458, 0.0286664591098],
+[-15.1584378451, 6.32416019498, 0.000588699264696, 9.94029556982e-05, 0.999304213906, 0.0372925142865],
+[-15.3586519676, 6.35172061337, -0.000451459999795, 0.000495593742951, 0.997650450382, 0.0685064188469],
+[-15.676388604, 6.37820018353, -0.000588948102882, -8.10145159231e-05, 0.999506101903, 0.0314197204931],
+[-15.97194747, 6.38747796847, -0.000138967443121, -6.08649689182e-05, 0.999977364048, -0.00672669123966],
+[-16.0387995688, 6.39086564902, 0.000229985758236, -0.000255740984626, 0.996949889899, 0.0780435694599],
+[-16.0437995671, 6.39358224432, -0.000286266444071, -0.000174732081587, 0.967443612459, 0.253086436287]]
+
+controller_frequency: 30.0
+planner_frequency: 5
+oscillation_timeout: 30
+controller_patience: 15
+recovery_behavior_enabled: true
+clearing_rotation_allowed: false
+
+TebLocalPlannerROS:
+ odom_topic: /odom
+
+ # Trajectory
+ teb_autosize: True
+ dt_ref: 0.25
+ dt_hysteresis: 0.05
+ global_plan_overwrite_orientation: false
+ max_global_plan_lookahead_dist: 3.0
+ #feasibility_check_no_poses: 5
+ prefer_to_first_rot: True
+ 
+ # Robot
+
+ max_vel_x: 1
+ max_vel_y: 1
+ max_vel_theta: 1
+ max_vel_x_backwards: 1.0
+#max_vel_theta: 0.25
+ acc_lim_x: 0.8
+ acc_lim_y: 0.8
+ acc_lim_theta: 1.0
+ min_turning_radius: 0.0 # diff-drive robot (can turn on place!)
+ onmi_type: True
+
+
+ footprint_model:
+#  type: "polygon"
+#  vertices: [[0.25, -0.31], [0.25, 0.31], [-0.25, 0.31], [-0.25, -0.31]]
+   type: "circular"
+   radius: 0.255
+ # GoalTolerance
+
+ xy_goal_tolerance: 0.05
+ yaw_goal_tolerance: 0.05
+ free_goal_vel: False
+
+ # Obstacles
+
+ #min_obstacle_dist: 0.05 # This value must also include our robot radius, since footprint_model is set to "point".
+ #inflation_dist: 0.25
+ include_costmap_obstacles: True
+ costmap_obstacles_behind_robot_dist: 1.0
+ obstacle_poses_affected: 30
+ costmap_converter_plugin: ""
+ costmap_converter_spin_thread: True
+ costmap_converter_rate: 15
+ 
+ include_dynamic_obstacles: True
+ # Optimization
+
+ no_inner_iterations: 5
+ no_outer_iterations: 4
+ optimization_activate: True
+ optimization_verbose: False
+ penalty_epsilon: 0.1
+ weight_max_vel_x: 200
+ weight_max_vel_y: 200
+ weight_max_vel_theta: 1
+ weight_acc_lim_x: 1
+ weight_acc_lim_theta: 1
+ weight_kinematics_nh: 1
+ weight_kinematics_forward_drive: 1
+ weight_kinematics_turning_radius: 0
+ weight_optimaltime: 1
+ weight_obstacle: 50
+ weight_dynamic_obstacle: 10 # not in use yet
+
+ # recovery
+ oscillation_recovery: True
+
+ # Homotopy Class Planner
+
+ enable_homotopy_class_planning: False
+ enable_multithreading: True
+ simple_exploration: False
+ max_number_classes: 2
+ selection_cost_hysteresis: 0.9
+ selection_obst_cost_scale: 1.0
+ selection_alternative_time_cost: False
+
+ roadmap_graph_no_samples: 15
+ roadmap_graph_area_width: 5
+ h_signature_prescaler: 0.5
+ h_signature_threshold: 0.1
+ obstacle_keypoint_offset: 0.1
+ obstacle_heading_threshold: 0.45
+ visualize_hc_graph: False
+
+ # LeadHuman
+
+ max_dist: 2 # the max distance between human and robot 
+ min_dist: 1.5 # min distance for the velocity constrain. when the distance < min_dist, the max_vel will restore original value
+ local_pose_to_human: True # whether let the robot alway pose to person when guiding the person
+ use_lead: True # whether use the lead method
+ soft_distance: 0.1 # the min_distance between robot and local goal. distance smaller than soft_distance will make the robot don't move. If soft_distance is too small, the robot will shake
+ consider_human_pose: True # when we compute the local point,we need to consider the person's pose.if true, the local goal must be in front of the person.
+ local_pose_to_human_full: True # this is a full version for orient to human , every point will set to pose to human. and for large pose change, the robot will first rotate to the person and then move.
+ gama: 0.5
+ weight_guide_person: 0.2
+
+
