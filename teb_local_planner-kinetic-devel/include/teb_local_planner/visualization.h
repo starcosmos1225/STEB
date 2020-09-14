@@ -42,9 +42,9 @@
 
 
 // teb stuff
-#include <teb_local_planner_dynamic/teb_config.h>
-#include <teb_local_planner_dynamic/timed_elastic_band.h>
-#include <teb_local_planner_dynamic/robot_footprint_model.h>
+#include <teb_local_planner/teb_config.h>
+#include <teb_local_planner/timed_elastic_band.h>
+#include <teb_local_planner/robot_footprint_model.h>
 
 // ros stuff
 #include <ros/publisher.h>
@@ -276,6 +276,6 @@ typedef boost::shared_ptr<const TebVisualization> TebVisualizationConstPtr;
 
 
 // Include template method implementations / definitions
-#include <teb_local_planner_dynamic/visualization.hpp>
+#include <teb_local_planner/visualization.hpp>
 
 #endif /* VISUALIZATION_H_ */

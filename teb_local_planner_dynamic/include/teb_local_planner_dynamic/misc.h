@@ -182,8 +182,8 @@ inline bool inPolygon(const Eigen::Vector2d& point,const std::vector< Eigen::Vec
             continue;
         if (y_i<=y&&y_j<=y)
             continue;
-        if (x_i==x_j&&(x_i<x))
-            continue;
+//        if (x_j<=x&&(x_i<=x))
+//            continue;
         double t = (y-y_i)/(y_j-y_i);
         double x_c = (x_j-x_i)*t+x_i;
         if (x_c<x)

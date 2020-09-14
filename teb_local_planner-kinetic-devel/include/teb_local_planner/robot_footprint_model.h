@@ -40,12 +40,10 @@
 #ifndef ROBOT_FOOTPRINT_MODEL_H
 #define ROBOT_FOOTPRINT_MODEL_H
 
-#include <teb_local_planner_dynamic/pose_se2.h>
-#include <teb_local_planner_dynamic/pose_se3.h>
-#include <teb_local_planner_dynamic/obstacles.h>
+#include <teb_local_planner/pose_se2.h>
+#include <teb_local_planner/obstacles.h>
 #include <visualization_msgs/Marker.h>
-#include <teb_local_planner_dynamic/misc.h>
-#include <iostream>
+
 namespace teb_local_planner
 {
 
@@ -91,7 +89,7 @@ public:
     * @param t time, for which the predicted distance to the obstacle is calculated
     * @return Euclidean distance to the robot
     */
-  virtual double estimateSpatioTemporalDistance(const PoseSE3& current_pose, const Obstacle* obstacle) const = 0;
+  virtual double estimateSpatioTemporalDistance(const PoseSE2& current_pose, const Obstacle* obstacle, double t) const = 0;
 
   /**
     * @brief Visualize the robot using a markers
@@ -110,7 +108,7 @@ public:
    * @return inscribed radius
    */
   virtual double getInscribedRadius() = 0;
-  virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const= 0 ;
+
 	
 
 public:	
@@ -165,9 +163,9 @@ public:
     * @param t time, for which the predicted distance to the obstacle is calculated
     * @return Euclidean distance to the robot
     */
-  virtual double estimateSpatioTemporalDistance(const PoseSE3& current_pose, const Obstacle* obstacle) const
+  virtual double estimateSpatioTemporalDistance(const PoseSE2& current_pose, const Obstacle* obstacle, double t) const
   {
-    return obstacle->getMinimumSpatioTemporalDistance(current_pose);
+    return obstacle->getMinimumSpatioTemporalDistance(current_pose.position(), t);
   }
 
   /**
@@ -175,10 +173,6 @@ public:
    * @return inscribed radius
    */
   virtual double getInscribedRadius() {return 0.0;}
-  virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const
-  {
-    return current_pose.position();
-  }
 
 };
 
@@ -226,9 +220,9 @@ public:
     * @param t time, for which the predicted distance to the obstacle is calculated
     * @return Euclidean distance to the robot
     */
-  virtual double estimateSpatioTemporalDistance(const PoseSE3& current_pose, const Obstacle* obstacle) const
+  virtual double estimateSpatioTemporalDistance(const PoseSE2& current_pose, const Obstacle* obstacle, double t) const
   {
-    return obstacle->getMinimumSpatioTemporalDistance(current_pose,radius_);
+    return obstacle->getMinimumSpatioTemporalDistance(current_pose.position(), t) - radius_;
   }
 
   /**
@@ -256,12 +250,7 @@ public:
    * @return inscribed radius
    */
   virtual double getInscribedRadius() {return radius_;}
-  virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const
-  {
-      Eigen::Vector2d direction = point-current_pose.position();
-      direction.normalize();
-    return current_pose.position()+radius_*direction;
-  }
+
 private:
     
   double radius_;
@@ -322,15 +311,11 @@ public:
     * @param t time, for which the predicted distance to the obstacle is calculated
     * @return Euclidean distance to the robot
     */
-  virtual double estimateSpatioTemporalDistance(const PoseSE3& current_pose, const Obstacle* obstacle) const
+  virtual double estimateSpatioTemporalDistance(const PoseSE2& current_pose, const Obstacle* obstacle, double t) const
   {
     Eigen::Vector2d dir = current_pose.orientationUnitVec();
-    PoseSE3 front_pose = current_pose;
-    PoseSE3 rear_pose = current_pose;
-    front_pose.position() = front_pose.position() + front_offset_*dir;
-    rear_pose.position() = rear_pose.position() - rear_offset_*dir;
-    double dist_front = obstacle->getMinimumSpatioTemporalDistance(front_pose,front_radius_);
-    double dist_rear = obstacle->getMinimumSpatioTemporalDistance(rear_pose,rear_radius_);
+    double dist_front = obstacle->getMinimumSpatioTemporalDistance(current_pose.position() + front_offset_*dir, t) - front_radius_;
+    double dist_rear = obstacle->getMinimumSpatioTemporalDistance(current_pose.position() - rear_offset_*dir, t) - rear_radius_;
     return std::min(dist_front, dist_rear);
   }
 
@@ -382,27 +367,6 @@ public:
       double min_longitudinal = std::min(rear_offset_ + rear_radius_, front_offset_ + front_radius_);
       double min_lateral = std::min(rear_radius_, front_radius_);
       return std::min(min_longitudinal, min_lateral);
-  }
-  virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const
-  {
-      Eigen::Vector2d dir = current_pose.orientationUnitVec();
-      PoseSE3 front_pose = current_pose;
-      PoseSE3 rear_pose = current_pose;
-      front_pose.position() = front_pose.position() + front_offset_*dir;
-      rear_pose.position() = rear_pose.position() - rear_offset_*dir;
-      Eigen::Vector2d direction_front = point-front_pose.position();
-      double dist_front = direction_front.norm();
-      Eigen::Vector2d direction_rear = point-rear_pose.position();
-      double dist_rear = direction_rear.norm();
-      if (dist_rear<dist_front)
-      {
-          direction_front.normalize();
-          return current_pose.position()+front_radius_*direction_front;
-      }else
-      {
-          direction_rear.normalize();
-          return current_pose.position()+rear_radius_*direction_rear;
-      }
   }
 
 private:
@@ -492,14 +456,12 @@ public:
     * @param t time, for which the predicted distance to the obstacle is calculated
     * @return Euclidean distance to the robot
     */
-  virtual double estimateSpatioTemporalDistance(const PoseSE3& current_pose, const Obstacle* obstacle) const
+  virtual double estimateSpatioTemporalDistance(const PoseSE2& current_pose, const Obstacle* obstacle, double t) const
   {
     Eigen::Vector2d line_start_world;
     Eigen::Vector2d line_end_world;
-    transformToWorld(current_pose.toPoseSE2(), line_start_world, line_end_world);
-    PoseSE3 line_start(line_start_world,current_pose.t(),current_pose.theta());
-    PoseSE3 line_end(line_end_world,current_pose.t(),current_pose.theta());
-    return obstacle->getMinimumSpatioTemporalDistance(line_start, line_end);
+    transformToWorld(current_pose, line_start_world, line_end_world);
+    return obstacle->getMinimumSpatioTemporalDistance(line_start_world, line_end_world, t);
   }
 
   /**
@@ -543,12 +505,7 @@ public:
   {
       return 0.0; // lateral distance = 0.0
   }
-  virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const
-  {
-      Eigen::Vector2d cross_point;
-      computeDistPointToLine(point,line_start_,line_end_,&cross_point);
-      return cross_point;
-  }
+
 private:
     
   /**
@@ -624,18 +581,11 @@ public:
     * @param t time, for which the predicted distance to the obstacle is calculated
     * @return Euclidean distance to the robot
     */
-  virtual double estimateSpatioTemporalDistance(const PoseSE3& current_pose, const Obstacle* obstacle) const
+  virtual double estimateSpatioTemporalDistance(const PoseSE2& current_pose, const Obstacle* obstacle, double t) const
   {
     Point2dContainer polygon_world(vertices_.size());
-    transformToWorld(current_pose.toPoseSE2(), polygon_world);
-    Point3dContainer polygon_3d(vertices_.size());
-    for (unsigned int i=0;i<polygon_world.size();++i)
-    {
-        polygon_3d[i][0] = polygon_world[i][0];
-        polygon_3d[i][1] = polygon_world[i][1];
-        polygon_3d[i][2] = current_pose.t();
-    }
-    return obstacle->getMinimumSpatioTemporalDistance(polygon_3d);
+    transformToWorld(current_pose, polygon_world);
+    return obstacle->getMinimumSpatioTemporalDistance(polygon_world, t);
   }
 
   /**
@@ -702,31 +652,7 @@ public:
      double edge_dist = distance_point_to_segment_2d(center, vertices_.back(), vertices_.front());
      return std::min(min_dist, std::min(vertex_dist, edge_dist));
   }
-  virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const
-  {
-    Point2dContainer polygon_world(vertices_.size());
-    transformToWorld(current_pose.toPoseSE2(), polygon_world);
-      Eigen::Vector2d cross_point(0,0);
-      std::cout<<"pose :"<<current_pose.x()<<" "<<current_pose.y()<<std::endl;
-      std::cout<<"point:"<<point[0]<<" "<<point[1]<<std::endl;
-      if (inPolygon(point,polygon_world))
-        return point;
-      std::cout<<"polygon:"<<std::endl;
-      for (int i = 0; i < (int)polygon_world.size(); ++i)
-      {
-          std::cout<<polygon_world[i]<<std::endl;
-        int j=(i+1)%(int)polygon_world.size();
-         // compute distance from the robot center point to the first vertex
-         if (check_line_segments_intersection_2d(point,current_pose.position(),polygon_world[i],polygon_world[j],&cross_point))
-             return cross_point;
 
-      }
-      //if (check_line_segments_intersection_2d(point,current_pose.position(),vertices_[vertices_.size() - 1],vertices_[0],&cross_point))
-          //return cross_point;
-
-      ROS_WARN("WARN:not find a cross point");
-      return cross_point;
-  }
 private:
     
   /**

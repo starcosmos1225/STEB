@@ -83,37 +83,77 @@ public:
    * @brief Actual cost function
    */   
   void computeError()
-  {
-    ROS_ASSERT_MSG(cfg_ && _measurement.size()>0 && robot_model_, "You must call setTebConfig(), setObstacle() and setRobotModel() on EdgeDynamicObstacle()");
-    const VertexPose* bandpt = static_cast<const VertexPose*>(_vertices[0]);
-    
-
-    auto obst1 = _measurement[0];
-    auto obst2 = _measurement[1];
-    auto line_start = obst1->getClosestPoint(bandpt->position());
-    auto line_end = obst2->getClosestPoint(bandpt->position());
-    double scale_t = (bandpt->t()-obst1->getTime())/(obst2->getTime()-obst1->getTime());
-    const Eigen::Vector2d line_mid = (line_end-line_start)*scale_t + line_start;
-    auto robot_point = robot_model_->getClosestPoint(bandpt->pose(),line_mid);
-    Eigen::Vector3d line_start3d(line_start[0],line_start[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst1->getTime());
-    Eigen::Vector3d line_end3d(line_end[0],line_end[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst2->getTime());
-    Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],cfg_->optim.weight_dynamic_obstacle_time_factor*bandpt->t());
-    double dist = computeDistPointToLine3d(robot_point3d,line_start3d,line_end3d);
-    _error[0] = penaltyBoundFromBelow(dist, cfg_->obstacles.min_obstacle_dist, cfg_->optim.penalty_epsilon);
-    _error[1] = penaltyBoundFromBelow(dist, cfg_->obstacles.dynamic_obstacle_inflation_dist, 0.0);
-    if (cfg_->optim.obstacle_cost_exponent != 1.0 && cfg_->obstacles.min_obstacle_dist > 0.0)
     {
-      // Optional non-linear cost. Note the max cost (before weighting) is
-      // the same as the straight line version and that all other costs are
-      // below the straight line (for positive exponent), so it may be
-      // necessary to increase weight_obstacle and/or the inflation_weight
-      // when using larger exponents.
-      _error[0] = cfg_->obstacles.min_obstacle_dist * std::pow(_error[0] / cfg_->obstacles.min_obstacle_dist, cfg_->optim.obstacle_cost_exponent);
-      _error[1] = cfg_->obstacles.min_obstacle_dist * std::pow(_error[1] / cfg_->obstacles.min_obstacle_dist, cfg_->optim.obstacle_cost_exponent);
+      ROS_ASSERT_MSG(cfg_ && _measurement.size()>0 && robot_model_, "You must call setTebConfig(), setObstacle() and setRobotModel() on EdgeDynamicObstacle()");
+      const VertexPose* bandpt = static_cast<const VertexPose*>(_vertices[0]);
+
+
+      auto obst1 = _measurement[0];
+      auto obst2 = _measurement[1];
+      //if (!bandpt)
+          //ROS_INFO("nullptr");
+      auto line_start = obst1->getClosestPoint(bandpt->position());
+      auto line_end = obst2->getClosestPoint(bandpt->position());
+      double scale_t = (bandpt->t()-obst1->getTime())/(obst2->getTime()-obst1->getTime());
+      const Eigen::Vector2d line_mid = (line_end-line_start)*scale_t + line_start;
+      //ROS_INFO("get here:pose:%lf %lf point:%lf %lf",bandpt->pose().x(),bandpt->pose().y(),line_mid[0],line_mid[1]);
+      auto robot_point = robot_model_->getClosestPoint(bandpt->pose(),line_mid);
+      Eigen::Vector3d line_start3d(line_start[0],line_start[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst1->getTime());
+      Eigen::Vector3d line_end3d(line_end[0],line_end[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst2->getTime());
+      Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],cfg_->optim.weight_dynamic_obstacle_time_factor*bandpt->t());
+      dv_ = line_end3d-line_start3d;
+      dv_.normalize();
+      Eigen::Vector3d cross_point;
+      dist_ = std::max(1e-6,computeDistPointToLine3d(robot_point3d,line_start3d,line_end3d,&cross_point));
+      cross_line_ = robot_point3d-cross_point;
+      _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist, cfg_->optim.penalty_epsilon);
+      _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist, 0.0);
+      if (cfg_->optim.obstacle_cost_exponent != 1.0 && cfg_->obstacles.min_obstacle_dist > 0.0)
+      {
+        // Optional non-linear cost. Note the max cost (before weighting) is
+        // the same as the straight line version and that all other costs are
+        // below the straight line (for positive exponent), so it may be
+        // necessary to increase weight_obstacle and/or the inflation_weight
+        // when using larger exponents.
+        _error[0] = cfg_->obstacles.min_obstacle_dist * std::pow(_error[0] / cfg_->obstacles.min_obstacle_dist, cfg_->optim.obstacle_cost_exponent);
+        _error[1] = cfg_->obstacles.min_obstacle_dist * std::pow(_error[1] / cfg_->obstacles.min_obstacle_dist, cfg_->optim.obstacle_cost_exponent);
+      }
+      //ROS_INFO("error:%lf",_error[0]);
+      ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeDynamicObstacle::computeError() _error[0]=%f\n",_error[0]);
     }
-    ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeDynamicObstacle::computeError() _error[0]=%f\n",_error[0]);
-  }
-  
+    void linearizeOplus()
+    {
+        Eigen::Vector3d nx(1.0,0.0,0.0);
+        Eigen::Vector3d ny(0.0,1.0,0.0);
+        Eigen::Vector3d nz(0.0,0.0,1.0);
+        //ROS_INFO("dist is %lf",dist_);
+        if (dist_>cfg_->obstacles.min_obstacle_dist)
+        {
+          _jacobianOplusXi( 0 , 0 ) = 0;
+          _jacobianOplusXi( 0 , 1 ) = 0;
+          _jacobianOplusXi( 0 , 2 ) = 0;
+          _jacobianOplusXi( 0 , 3 ) = 0;
+        }else
+        {
+            _jacobianOplusXi( 0 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
+            _jacobianOplusXi( 0 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
+            _jacobianOplusXi( 0 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
+            _jacobianOplusXi( 0 , 3 ) = 0;
+        }
+        if (dist_>cfg_->obstacles.dynamic_obstacle_inflation_dist)
+        {
+          _jacobianOplusXi( 1 , 0 ) = 0;
+          _jacobianOplusXi( 1 , 1 ) = 0;
+          _jacobianOplusXi( 1 , 2 ) = 0;
+          _jacobianOplusXi( 1 , 3 ) = 0;
+        }else
+        {
+            _jacobianOplusXi( 1 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
+            _jacobianOplusXi( 1 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
+            _jacobianOplusXi( 1 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
+            _jacobianOplusXi( 1 , 3 ) = 0;
+        }
+    }
   
   /**
    * @brief Set Obstacle for the underlying cost function
@@ -149,6 +189,9 @@ public:
 protected:
   
   const BaseRobotFootprintModel* robot_model_; //!< Store pointer to robot_model
+  Eigen::Vector3d cross_line_;
+    double dist_;
+    Eigen::Vector3d dv_;
   
 public: 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
