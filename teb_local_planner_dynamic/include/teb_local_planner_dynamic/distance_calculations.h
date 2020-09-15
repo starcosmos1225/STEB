@@ -85,7 +85,7 @@ inline double distance_point_to_segment_2d(const Eigen::Ref<const Eigen::Vector2
 {
   return  (point - closest_point_on_line_segment_2d(point, line_start, line_end)).norm(); 
 }
-inline double distance_point_to_segment_3d(const Eigen::Ref<const Eigen::Vector3d>& point, const Eigen::Ref<const Eigen::Vector3d>& line_start, const Eigen::Ref<const Eigen::Vector3d>& line_end,double time_scale=1.0)
+inline double distance_point_to_segment_3d(const Eigen::Ref<const Eigen::Vector3d>& point, const Eigen::Ref<const Eigen::Vector3d>& line_start, const Eigen::Ref<const Eigen::Vector3d>& line_end)
 {
   Eigen::Vector3d AO = point-line_start;
   Eigen::Vector3d AB = line_end - line_start;

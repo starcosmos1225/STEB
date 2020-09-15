@@ -519,16 +519,23 @@ int TimedElasticBand::findClosestTrajectoryPose3D(const Eigen::Ref<const Eigen::
 {
     double min_dist = std::numeric_limits<double>::max();
     int min_idx = -1;
+    Eigen::Vector3d scale(1.0,1.0,time_scale);
     //#pragma omp parallel for
     for (int i = 0; i < sizePoses(); i++)
     {
+        ROS_INFO("pose:%lf %lf %lf",Pose(i).position()[0],Pose(i).position()[1],Pose(i).t());
+        ROS_INFO("line1:%lf %lf %lf",ref_line_start[0],ref_line_start[1],ref_line_start[2]);
+        ROS_INFO("line1:%lf %lf %lf",ref_line_end[0],ref_line_end[1],ref_line_end[2]);
         Eigen::Vector3d pose(Pose(i).position()[0],Pose(i).position()[1],Pose(i).t());
-      double dist = distance_point_to_segment_3d(pose, ref_line_start, ref_line_end,time_scale);
+      double dist = distance_point_to_segment_3d(pose.cwiseProduct(scale), ref_line_start.cwiseProduct(scale),
+                                                 ref_line_end.cwiseProduct(scale));
+
       if (dist < min_dist)
       {
         min_dist = dist;
         min_idx = i;
       }
+      ROS_INFO("compute dist is:%lf min_dist is:%lf min_idx:%d",dist,min_dist,min_idx);
     }
     // double dist = distance_point_to_segment_3d(Eigen::Vector3d(pose_goal_->x(),pose_goal_->y(),BackPose().t()+time_diff_goal_->dt()), ref_line_start, ref_line_end);
     // if (dist < min_dist)

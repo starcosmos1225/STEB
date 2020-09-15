@@ -261,7 +261,7 @@ public:
   const Eigen::Vector2d& getCentroidVelocity() const {return centroid_velocity_;}
 
   //@}
-
+  virtual double getCircumscribedRadius() = 0;
 
 
   /** @name Helper Functions */
@@ -449,7 +449,7 @@ public:
   {
     return std::complex<double>(pos_[0],pos_[1]);
   }
-  
+  virtual double getCircumscribedRadius() {return 0.0;}
   // Accessor methods
   const Eigen::Vector2d& position() const {return pos_;} //!< Return the current position of the obstacle (read-only)
   Eigen::Vector2d& position() {return pos_;} //!< Return the current position of the obstacle
@@ -617,7 +617,7 @@ public:
   {
     return std::complex<double>(pos_[0],pos_[1]);
   }
-
+  virtual double getCircumscribedRadius() {return radius_;}
   // Accessor methods
   const Eigen::Vector2d& position() const {return pos_;} //!< Return the current position of the obstacle (read-only)
   Eigen::Vector2d& position() {return pos_;} //!< Return the current position of the obstacle
@@ -788,7 +788,7 @@ public:
   {
     return std::complex<double>(centroid_.x(), centroid_.y());
   }
-  
+  virtual double getCircumscribedRadius() {return (end_-start_).norm()*0.5;}
   // Access or modify line
   const Eigen::Vector2d& start() const {return start_;}
   void setStart(const Eigen::Ref<const Eigen::Vector2d>& start) {start_ = start; calcCentroid();}
@@ -959,7 +959,7 @@ public:
   {
     return std::complex<double>(centroid_.x(), centroid_.y());
   }
-
+  virtual double getCircumscribedRadius() {return (end_-start_).norm()*0.5+radius_;}
   // Access or modify line
   const Eigen::Vector2d& start() const {return start_;}
   void setStart(const Eigen::Ref<const Eigen::Vector2d>& start) {start_ = start; calcCentroid();}
@@ -1177,7 +1177,18 @@ public:
     assert(finalized_ && "Finalize the polygon after all vertices are added.");
     return std::complex<double>(centroid_.coeffRef(0), centroid_.coeffRef(1));
   }
-  
+  virtual double getCircumscribedRadius()
+  {
+      if (vertices_.size()<3)
+          return 0.0;
+      double max_dist =std::numeric_limits<double>::min();
+      for (unsigned int i=0;i<vertices_.size();i++)
+      {
+          double dist = vertices_[i].norm();
+          max_dist = std::max(dist,max_dist);
+      }
+      return max_dist;
+  }
   // implements toPolygonMsg() of the base class
   virtual void toPolygonMsg(geometry_msgs::Polygon& polygon);
 

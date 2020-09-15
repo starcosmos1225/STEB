@@ -810,7 +810,7 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
     ve.push_back(std::make_pair(min_obstacle_index,min_point_index));
               //ROS_INFO("add into teb");
     EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle();
-    ROS_INFO("add edge index:%d size:%d %lf %lf",min_point_index,teb_.sizePoses(), teb_.PoseVertex(min_point_index)->x(),teb_.PoseVertex(min_point_index)->y());
+    //ROS_INFO("add edge index:%d size:%d %lf %lf",min_point_index,teb_.sizePoses(), teb_.PoseVertex(min_point_index)->x(),teb_.PoseVertex(min_point_index)->y());
     dynobst_edge->setVertex(0,teb_.PoseVertex(min_point_index));
     dynobst_edge->setInformation(information);
     std::vector<ObstaclePtr> points(2);
@@ -820,7 +820,7 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
     optimizer_->addEdge(dynobst_edge);
   }
   if (debug)
-  std::cout<<"Edge"<<std::endl;
+    std::cout<<"Edge"<<std::endl;
   for (auto edge:ve)
   {
     if (debug)

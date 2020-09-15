@@ -110,6 +110,7 @@ public:
    * @return inscribed radius
    */
   virtual double getInscribedRadius() = 0;
+  virtual double getCircumscribedRadius() const= 0;
   virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const= 0 ;
 	
 
@@ -175,6 +176,7 @@ public:
    * @return inscribed radius
    */
   virtual double getInscribedRadius() {return 0.0;}
+  virtual double getCircumscribedRadius() const{return 0.0;};
   virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const
   {
     return current_pose.position();
@@ -256,6 +258,7 @@ public:
    * @return inscribed radius
    */
   virtual double getInscribedRadius() {return radius_;}
+  virtual double getCircumscribedRadius() const{return radius_;}
   virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const
   {
       Eigen::Vector2d direction = point-current_pose.position();
@@ -382,6 +385,10 @@ public:
       double min_longitudinal = std::min(rear_offset_ + rear_radius_, front_offset_ + front_radius_);
       double min_lateral = std::min(rear_radius_, front_radius_);
       return std::min(min_longitudinal, min_lateral);
+  }
+  virtual double getCircumscribedRadius() const
+  {
+      return 0.5*(rear_offset_ + rear_radius_+front_offset_ + front_radius_);
   }
   virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const
   {
@@ -543,6 +550,10 @@ public:
   {
       return 0.0; // lateral distance = 0.0
   }
+  virtual double getCircumscribedRadius() const
+  {
+      return (line_end_-line_start_).norm()*0.5; // lateral distance = 0.0
+  }
   virtual Eigen::Vector2d getClosestPoint(const PoseSE3& current_pose,const Eigen::Vector2d& point) const
   {
       Eigen::Vector2d cross_point;
@@ -681,11 +692,29 @@ public:
    * @brief Compute the inscribed radius of the footprint model
    * @return inscribed radius
    */
-  virtual double getInscribedRadius() 
+  virtual double getCircumscribedRadius() const
+  {
+     double max_dist = std::numeric_limits<double>::min();
+     Eigen::Vector2d center(0.0, 0.0);
+      
+     if (vertices_.size() <= 2)
+        return 0.0;
+
+     for (int i = 0; i < (int)vertices_.size(); ++i)
+     {
+        // compute distance from the robot center point to the first vertex
+        double vertex_dist = vertices_[i].norm();
+        //double edge_dist = distance_point_to_segment_2d(center, vertices_[i], vertices_[i+1]);
+        max_dist = std::max(max_dist, vertex_dist);
+     }
+ 
+     return max_dist;
+  }
+  virtual double getInscribedRadius()
   {
      double min_dist = std::numeric_limits<double>::max();
      Eigen::Vector2d center(0.0, 0.0);
-      
+
      if (vertices_.size() <= 2)
         return 0.0;
 
@@ -696,7 +725,7 @@ public:
         double edge_dist = distance_point_to_segment_2d(center, vertices_[i], vertices_[i+1]);
         min_dist = std::min(min_dist, std::min(vertex_dist, edge_dist));
      }
- 
+
      // we also need to check the last vertex and the first vertex
      double vertex_dist = vertices_.back().norm();
      double edge_dist = distance_point_to_segment_2d(center, vertices_.back(), vertices_.front());

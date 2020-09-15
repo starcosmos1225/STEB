@@ -92,12 +92,17 @@ public:
       auto obst2 = _measurement[1];
       //if (!bandpt)
           //ROS_INFO("nullptr");
-      auto line_start = obst1->getClosestPoint(bandpt->position());
-      auto line_end = obst2->getClosestPoint(bandpt->position());
-      double scale_t = (bandpt->t()-obst1->getTime())/(obst2->getTime()-obst1->getTime());
-      const Eigen::Vector2d line_mid = (line_end-line_start)*scale_t + line_start;
+//      auto line_start = obst1->getClosestPoint(bandpt->position());
+//      auto line_end = obst2->getClosestPoint(bandpt->position());
+      auto line_start = obst1->getCentroid();
+      auto line_end = obst2->getCentroid();
+      //double scale_t = (bandpt->t()-obst1->getTime())/(obst2->getTime()-obst1->getTime());
+      //const Eigen::Vector2d line_mid = (line_end-line_start)*scale_t + line_start;
       //ROS_INFO("get here:pose:%lf %lf point:%lf %lf",bandpt->pose().x(),bandpt->pose().y(),line_mid[0],line_mid[1]);
-      auto robot_point = robot_model_->getClosestPoint(bandpt->pose(),line_mid);
+      // auto robot_point = robot_model_->getClosestPoint(bandpt->pose(),line_mid);
+      auto robot_point = bandpt->position();
+      double radius_robot = robot_model_->getCircumscribedRadius();
+      double radius_obstacles = obst1->getCircumscribedRadius();
       Eigen::Vector3d line_start3d(line_start[0],line_start[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst1->getTime());
       Eigen::Vector3d line_end3d(line_end[0],line_end[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst2->getTime());
       Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],cfg_->optim.weight_dynamic_obstacle_time_factor*bandpt->t());
@@ -106,8 +111,8 @@ public:
       Eigen::Vector3d cross_point;
       dist_ = std::max(1e-6,computeDistPointToLine3d(robot_point3d,line_start3d,line_end3d,&cross_point));
       cross_line_ = robot_point3d-cross_point;
-      _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist, cfg_->optim.penalty_epsilon);
-      _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist, 0.0);
+      _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles, cfg_->optim.penalty_epsilon);
+      _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist+radius_robot+radius_obstacles, 0.0);
       if (cfg_->optim.obstacle_cost_exponent != 1.0 && cfg_->obstacles.min_obstacle_dist > 0.0)
       {
         // Optional non-linear cost. Note the max cost (before weighting) is
@@ -121,39 +126,39 @@ public:
       //ROS_INFO("error:%lf",_error[0]).
       ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeDynamicObstacle::computeError() _error[0]=%f\n",_error[0]);
     }
-    void linearizeOplus()
-    {
-        Eigen::Vector3d nx(1.0,0.0,0.0);
-        Eigen::Vector3d ny(0.0,1.0,0.0);
-        Eigen::Vector3d nz(0.0,0.0,1.0);
-        //ROS_INFO("dist is %lf",dist_);
-        if (dist_>cfg_->obstacles.min_obstacle_dist)
-        {
-          _jacobianOplusXi( 0 , 0 ) = 0;
-          _jacobianOplusXi( 0 , 1 ) = 0;
-          _jacobianOplusXi( 0 , 2 ) = 0;
-          _jacobianOplusXi( 0 , 3 ) = 0;
-        }else
-        {
-            _jacobianOplusXi( 0 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
-            _jacobianOplusXi( 0 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
-            _jacobianOplusXi( 0 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
-            _jacobianOplusXi( 0 , 3 ) = 0;
-        }
-        if (dist_>cfg_->obstacles.dynamic_obstacle_inflation_dist)
-        {
-          _jacobianOplusXi( 1 , 0 ) = 0;
-          _jacobianOplusXi( 1 , 1 ) = 0;
-          _jacobianOplusXi( 1 , 2 ) = 0;
-          _jacobianOplusXi( 1 , 3 ) = 0;
-        }else
-        {
-            _jacobianOplusXi( 1 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
-            _jacobianOplusXi( 1 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
-            _jacobianOplusXi( 1 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
-            _jacobianOplusXi( 1 , 3 ) = 0;
-        }
-    }
+//    void linearizeOplus()
+//    {
+//        Eigen::Vector3d nx(1.0,0.0,0.0);
+//        Eigen::Vector3d ny(0.0,1.0,0.0);
+//        Eigen::Vector3d nz(0.0,0.0,1.0);
+//        //ROS_INFO("dist is %lf",dist_);
+//        if (dist_>cfg_->obstacles.min_obstacle_dist)
+//        {
+//          _jacobianOplusXi( 0 , 0 ) = 0;
+//          _jacobianOplusXi( 0 , 1 ) = 0;
+//          _jacobianOplusXi( 0 , 2 ) = 0;
+//          _jacobianOplusXi( 0 , 3 ) = 0;
+//        }else
+//        {
+//            _jacobianOplusXi( 0 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
+//            _jacobianOplusXi( 0 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
+//            _jacobianOplusXi( 0 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
+//            _jacobianOplusXi( 0 , 3 ) = 0;
+//        }
+//        if (dist_>cfg_->obstacles.dynamic_obstacle_inflation_dist)
+//        {
+//          _jacobianOplusXi( 1 , 0 ) = 0;
+//          _jacobianOplusXi( 1 , 1 ) = 0;
+//          _jacobianOplusXi( 1 , 2 ) = 0;
+//          _jacobianOplusXi( 1 , 3 ) = 0;
+//        }else
+//        {
+//            _jacobianOplusXi( 1 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
+//            _jacobianOplusXi( 1 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
+//            _jacobianOplusXi( 1 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
+//            _jacobianOplusXi( 1 , 3 ) = 0;
+//        }
+//    }
   
   /**
    * @brief Set Obstacle for the underlying cost function
