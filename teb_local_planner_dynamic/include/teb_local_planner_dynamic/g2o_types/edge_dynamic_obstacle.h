@@ -118,7 +118,7 @@ public:
         _error[0] = cfg_->obstacles.min_obstacle_dist * std::pow(_error[0] / cfg_->obstacles.min_obstacle_dist, cfg_->optim.obstacle_cost_exponent);
         _error[1] = cfg_->obstacles.min_obstacle_dist * std::pow(_error[1] / cfg_->obstacles.min_obstacle_dist, cfg_->optim.obstacle_cost_exponent);
       }
-      //ROS_INFO("error:%lf",_error[0])
+      //ROS_INFO("error:%lf",_error[0]).
       ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeDynamicObstacle::computeError() _error[0]=%f\n",_error[0]);
     }
     void linearizeOplus()
