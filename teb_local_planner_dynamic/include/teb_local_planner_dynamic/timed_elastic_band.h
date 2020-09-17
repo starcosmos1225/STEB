@@ -448,7 +448,9 @@ public:
    */
   int findClosestTrajectoryPose(const Eigen::Ref<const Eigen::Vector2d>& ref_point, double* distance = NULL, int begin_idx=0) const;
   int findClosestTrajectoryPose3D(const Eigen::Ref<const Eigen::Vector3d>& ref_point, double* distance = NULL, int begin_idx=0) const;
+  std::vector<int> findTrajectoryPose3DInDist(const Eigen::Ref<const Eigen::Vector3d>& ref_point,double distance, double time_scale=1.0) const;
   int findClosestTrajectoryPose3D(const Eigen::Ref<const Eigen::Vector3d>& ref_line_start, const Eigen::Ref<const Eigen::Vector3d>& ref_line_end, double* distance = NULL, double time_scale=1.0) const;
+  std::vector<int> findTrajectoryPose3DInDist(const Eigen::Ref<const Eigen::Vector3d>& ref_line_start, const Eigen::Ref<const Eigen::Vector3d>& ref_line_end,double distance, double time_scale=1.0) const;
   /**
    * @brief Find the closest point on the trajectory w.r.t. to a provided reference line.
    * 

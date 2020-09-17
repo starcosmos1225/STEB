@@ -199,7 +199,7 @@ def run():
             msg = PoseStamped()
             msg.header.seq = count
             msg.header.frame_id = "map"
-            msg.pose.position.x = -6
+            msg.pose.position.x = -5
             msg.pose.position.y = 0
             msg.pose.orientation.x = 0.0
             msg.pose.orientation.y = 0.0

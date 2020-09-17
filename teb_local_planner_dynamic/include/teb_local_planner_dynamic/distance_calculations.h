@@ -85,7 +85,8 @@ inline double distance_point_to_segment_2d(const Eigen::Ref<const Eigen::Vector2
 {
   return  (point - closest_point_on_line_segment_2d(point, line_start, line_end)).norm(); 
 }
-inline double distance_point_to_segment_3d(const Eigen::Ref<const Eigen::Vector3d>& point, const Eigen::Ref<const Eigen::Vector3d>& line_start, const Eigen::Ref<const Eigen::Vector3d>& line_end)
+inline double distance_point_to_segment_3d(const Eigen::Ref<const Eigen::Vector3d>& point, const Eigen::Ref<const Eigen::Vector3d>& line_start,
+ const Eigen::Ref<const Eigen::Vector3d>& line_end, bool ignore_no_cross=false)
 {
   Eigen::Vector3d AO = point-line_start;
   Eigen::Vector3d AB = line_end - line_start;
@@ -96,9 +97,17 @@ inline double distance_point_to_segment_3d(const Eigen::Ref<const Eigen::Vector3
   AB.normalize();
   double t = AB.dot(AO);
   if (t<0)
+  {
+    if (ignore_no_cross)
+      return -1;
     return length_AO;
+  }
   if (t>length_AB)
+  {
+    if (ignore_no_cross)
+      return -1;
     return length_BO;
+  }
   Eigen::Vector3d cross_point = line_start+t*AB;
   return (point-cross_point).norm();
 }

@@ -103,6 +103,7 @@ public:
       auto robot_point = bandpt->position();
       double radius_robot = robot_model_->getCircumscribedRadius();
       double radius_obstacles = obst1->getCircumscribedRadius();
+      // ROS_INFO("robot:%lf obst:%lf",radius_robot,radius_obstacles);
       Eigen::Vector3d line_start3d(line_start[0],line_start[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst1->getTime());
       Eigen::Vector3d line_end3d(line_end[0],line_end[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst2->getTime());
       Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],cfg_->optim.weight_dynamic_obstacle_time_factor*bandpt->t());
@@ -110,7 +111,8 @@ public:
       dv_.normalize();
       Eigen::Vector3d cross_point;
       dist_ = std::max(1e-6,computeDistPointToLine3d(robot_point3d,line_start3d,line_end3d,&cross_point));
-      cross_line_ = robot_point3d-cross_point;
+      cross_line_ = cross_point - robot_point3d;
+      // ROS_INFO("radius:%lf",cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles);
       _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles, cfg_->optim.penalty_epsilon);
       _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist+radius_robot+radius_obstacles, 0.0);
       if (cfg_->optim.obstacle_cost_exponent != 1.0 && cfg_->obstacles.min_obstacle_dist > 0.0)
@@ -126,39 +128,39 @@ public:
       //ROS_INFO("error:%lf",_error[0]).
       ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeDynamicObstacle::computeError() _error[0]=%f\n",_error[0]);
     }
-//    void linearizeOplus()
-//    {
-//        Eigen::Vector3d nx(1.0,0.0,0.0);
-//        Eigen::Vector3d ny(0.0,1.0,0.0);
-//        Eigen::Vector3d nz(0.0,0.0,1.0);
-//        //ROS_INFO("dist is %lf",dist_);
-//        if (dist_>cfg_->obstacles.min_obstacle_dist)
-//        {
-//          _jacobianOplusXi( 0 , 0 ) = 0;
-//          _jacobianOplusXi( 0 , 1 ) = 0;
-//          _jacobianOplusXi( 0 , 2 ) = 0;
-//          _jacobianOplusXi( 0 , 3 ) = 0;
-//        }else
-//        {
-//            _jacobianOplusXi( 0 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
-//            _jacobianOplusXi( 0 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
-//            _jacobianOplusXi( 0 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
-//            _jacobianOplusXi( 0 , 3 ) = 0;
-//        }
-//        if (dist_>cfg_->obstacles.dynamic_obstacle_inflation_dist)
-//        {
-//          _jacobianOplusXi( 1 , 0 ) = 0;
-//          _jacobianOplusXi( 1 , 1 ) = 0;
-//          _jacobianOplusXi( 1 , 2 ) = 0;
-//          _jacobianOplusXi( 1 , 3 ) = 0;
-//        }else
-//        {
-//            _jacobianOplusXi( 1 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
-//            _jacobianOplusXi( 1 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
-//            _jacobianOplusXi( 1 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
-//            _jacobianOplusXi( 1 , 3 ) = 0;
-//        }
-//    }
+   void linearizeOplus()
+   {
+       Eigen::Vector3d nx(1.0,0.0,0.0);
+       Eigen::Vector3d ny(0.0,1.0,0.0);
+       Eigen::Vector3d nz(0.0,0.0,1.0);
+       //ROS_INFO("dist is %lf",dist_);
+      //  if (dist_>cfg_->obstacles.min_obstacle_dist)
+      //  {
+      //    _jacobianOplusXi( 0 , 0 ) = 0;
+      //    _jacobianOplusXi( 0 , 1 ) = 0;
+      //    _jacobianOplusXi( 0 , 2 ) = 0;
+      //    _jacobianOplusXi( 0 , 3 ) = 0;
+      //  }else
+       {
+           _jacobianOplusXi( 0 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
+           _jacobianOplusXi( 0 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
+           _jacobianOplusXi( 0 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
+           _jacobianOplusXi( 0 , 3 ) = 0;
+       }
+      //  if (dist_>cfg_->obstacles.dynamic_obstacle_inflation_dist)
+      //  {
+      //    _jacobianOplusXi( 1 , 0 ) = 0;
+      //    _jacobianOplusXi( 1 , 1 ) = 0;
+      //    _jacobianOplusXi( 1 , 2 ) = 0;
+      //    _jacobianOplusXi( 1 , 3 ) = 0;
+      //  }else
+       {
+           _jacobianOplusXi( 1 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
+           _jacobianOplusXi( 1 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
+           _jacobianOplusXi( 1 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
+           _jacobianOplusXi( 1 , 3 ) = 0;
+       }
+   }
   
   /**
    * @brief Set Obstacle for the underlying cost function

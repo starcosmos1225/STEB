@@ -537,6 +537,8 @@ void TebLocalPlannerROS::updateObstacleContainerWithCustomObstacles()
                             0.0);
         Eigen::Vector2d transformed_pos = (obstacle_to_map_eig * pos).head(2);
         Eigen::Vector2d transformed_vel = (obstacle_to_map_eig * vel).head(2);
+        //ROS_INFO("transform from %s to %s",custom_obstacle_msg_.header.frame_id.c_str(),global_frame_.c_str());
+        //ROS_INFO("pose:%lf %lf vel:%lf %lf",pos[0],pos[1],vel[0],vel[1]);
         //ROS_INFO("transformed pose:%lf %lf transformed vel:%lf %lf",transformed_pos[0],transformed_pos[1],transformed_vel[0],transformed_vel[1]);
         for (int t=0;t<cfg_.trajectory.dynamic_predict_no;++t)
         {

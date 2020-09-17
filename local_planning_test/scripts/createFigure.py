@@ -10,8 +10,8 @@ fig = plt.figure()
 
 ax = fig.gca(projection='3d')
 ax.legend()
-
-
+dynamic_predict_no=50
+max_point_no=500
 def drawStatic(line):
     theta = np.ones(100)
     z = np.linspace(0, 8, 100) / 4
@@ -181,8 +181,8 @@ def drawFig3_2():
 def drawFig_test():
     global fig
     fr = open("fig.txt")
-    data = np.zeros((30,3))
-    points = np.zeros((300,3))
+    data = np.zeros((dynamic_predict_no,3))
+    points = np.zeros((max_point_no,3))
     meetpoint=False
     meetedge=False
     index=0
@@ -212,7 +212,7 @@ def drawFig_test():
                 first=False
             else:
                 plt.cla()
-                ax.set_xlim(0,4)
+                ax.set_xlim(-9,9)
                 ax.set_ylim(-9,9)
                 ax.set_zlim(140, 180)
                 p = np.zeros((length,3))
@@ -221,19 +221,21 @@ def drawFig_test():
                 drawCurve(data,c='blue')
                 drawCurve(p)
                 for e in edges:
-                    if e[0]<30:
+                    if e[0]<dynamic_predict_no:
                         drawline(data[e[0],:],p[e[1],:])
                 
                 plt.draw()
                 plt.pause(0.5)
-                data = np.zeros((30,3))
-                points = np.zeros((300,3))
+                data = np.zeros((dynamic_predict_no,3))
+                points = np.zeros((max_point_no,3))
                 edges=[]
                 
                 
 
             continue
         l = line.strip().split()
+        if len(l)<2:
+            break
         if meetedge:
             edges.append([eval(l[0]),eval(l[1])])
             continue

@@ -489,7 +489,21 @@ int TimedElasticBand::findClosestTrajectoryPose3D(const Eigen::Ref<const Eigen::
 
     return min_idx;
 }
-
+std::vector<int> TimedElasticBand::findTrajectoryPose3DInDist(const Eigen::Ref<const Eigen::Vector3d>& ref_point,double distance, double time_scale) const
+{
+  std::vector<int> ans;
+  int n = sizePoses();
+  for (int i = 1; i < n; i++)
+  {
+    double dist_sq = computeTimeSpaceDistance(ref_point,Pose(i));
+    if (dist_sq < distance)
+    {
+      ans.push_back(i);
+    }
+  }
+  return ans;
+}
+    
 int TimedElasticBand::findClosestTrajectoryPose(const Eigen::Ref<const Eigen::Vector2d>& ref_line_start, const Eigen::Ref<const Eigen::Vector2d>& ref_line_end, double* distance) const
 {
   double min_dist = std::numeric_limits<double>::max();
@@ -523,19 +537,19 @@ int TimedElasticBand::findClosestTrajectoryPose3D(const Eigen::Ref<const Eigen::
     //#pragma omp parallel for
     for (int i = 0; i < sizePoses(); i++)
     {
-        ROS_INFO("pose:%lf %lf %lf",Pose(i).position()[0],Pose(i).position()[1],Pose(i).t());
-        ROS_INFO("line1:%lf %lf %lf",ref_line_start[0],ref_line_start[1],ref_line_start[2]);
-        ROS_INFO("line1:%lf %lf %lf",ref_line_end[0],ref_line_end[1],ref_line_end[2]);
+        //ROS_INFO("pose:%lf %lf %lf",Pose(i).position()[0],Pose(i).position()[1],Pose(i).t());
+        //ROS_INFO("line1:%lf %lf %lf",ref_line_start[0],ref_line_start[1],ref_line_start[2]);
+        //ROS_INFO("line1:%lf %lf %lf",ref_line_end[0],ref_line_end[1],ref_line_end[2]);
         Eigen::Vector3d pose(Pose(i).position()[0],Pose(i).position()[1],Pose(i).t());
       double dist = distance_point_to_segment_3d(pose.cwiseProduct(scale), ref_line_start.cwiseProduct(scale),
-                                                 ref_line_end.cwiseProduct(scale));
+                                                 ref_line_end.cwiseProduct(scale),true);
 
-      if (dist < min_dist)
+      if (dist < min_dist&&dist>0)
       {
         min_dist = dist;
         min_idx = i;
       }
-      ROS_INFO("compute dist is:%lf min_dist is:%lf min_idx:%d",dist,min_dist,min_idx);
+      //ROS_INFO("compute dist is:%lf min_dist is:%lf min_idx:%d",dist,min_dist,min_idx);
     }
     // double dist = distance_point_to_segment_3d(Eigen::Vector3d(pose_goal_->x(),pose_goal_->y(),BackPose().t()+time_diff_goal_->dt()), ref_line_start, ref_line_end);
     // if (dist < min_dist)
@@ -546,6 +560,22 @@ int TimedElasticBand::findClosestTrajectoryPose3D(const Eigen::Ref<const Eigen::
     if (distance)
       *distance = min_dist;
     return min_idx;
+}
+std::vector<int> TimedElasticBand::findTrajectoryPose3DInDist(const Eigen::Ref<const Eigen::Vector3d>& ref_line_start, const Eigen::Ref<const Eigen::Vector3d>& ref_line_end,double distance, double time_scale) const
+{
+  std::vector<int> ans;
+  Eigen::Vector3d scale(1.0,1.0,time_scale);
+  for (int i = 1; i < sizePoses(); i++)
+  {
+    Eigen::Vector3d pose(Pose(i).position()[0],Pose(i).position()[1],Pose(i).t());
+    double dist = distance_point_to_segment_3d(pose.cwiseProduct(scale), ref_line_start.cwiseProduct(scale),
+                                                ref_line_end.cwiseProduct(scale),true);
+    if (dist < distance&&dist>0)
+    {
+      ans.push_back(i);
+    }
+  }
+  return ans;
 }
 
 int TimedElasticBand::findClosestTrajectoryPose(const Point2dContainer& vertices, double* distance) const

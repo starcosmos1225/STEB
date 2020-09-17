@@ -234,10 +234,10 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
   //goal_ = teb_.BackPose();
   for(int i=0; i<iterations_outerloop; ++i)
   {
-      //for (auto &a:teb_.poses())
-      //{
-          //ROS_INFO("before auto size teb point info:x:%lf y:%lf theta:%lf t:%lf",a->x(),a->y(),a->theta(),a->t());
-      //}
+      // for (auto &a:teb_.poses())
+      // {
+      //     ROS_INFO("before auto size teb point info:x:%lf y:%lf theta:%lf t:%lf",a->x(),a->y(),a->theta(),a->t());
+      // }
       //ROS_INFO("before auto size teb point info:x:%lf y:%lf theta:%lf t:%lf",teb_.PoseGoal()->x(),teb_.PoseGoal()->y(),teb_.PoseGoal()->theta(),teb_.BackPose().t()+teb_.timeDiffVertex()->dt());
       //ROS_INFO("begin auto size");
     if (cfg_->trajectory.teb_autosize)
@@ -258,18 +258,18 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
         clearGraph();
         return false;
     }
-   //for (int j=0;j<teb_.sizePoses();++j)
-   //{
-        //ROS_INFO("before optimize:%d x:%lf y:%lf t:%lf theta:%lf",j,teb_.Pose(j).x(),teb_.Pose(j).y(),teb_.Pose(j).t(),teb_.Pose(j).theta());
-    //}
+  //  for (int j=0;j<teb_.sizePoses();++j)
+  //  {
+  //       ROS_INFO("before optimize:%d x:%lf y:%lf t:%lf theta:%lf",j,teb_.Pose(j).x(),teb_.Pose(j).y(),teb_.Pose(j).t(),teb_.Pose(j).theta());
+  //   }
    // ROS_INFO("before optimize:x:%lf y:%lf theta:%lf t:%lf",teb_.PoseGoal()->x(),teb_.PoseGoal()->y(),teb_.PoseGoal()->theta(),teb_.BackPose().t()+teb_.timeDiffVertex()->dt());
 
     success = optimizeGraph(iterations_innerloop, false);
 
-    //for (int j=0;j<teb_.sizePoses();++j)
-    //{
-       //ROS_INFO("after optimize:%d x:%lf y:%lf t:%lf theta:%lf",j,teb_.Pose(j).x(),teb_.Pose(j).y(),teb_.Pose(j).t(),teb_.Pose(j).theta());
-   //}
+  //   for (int j=0;j<teb_.sizePoses();++j)
+  //   {
+  //      ROS_INFO("after optimize:%d x:%lf y:%lf t:%lf theta:%lf",j,teb_.Pose(j).x(),teb_.Pose(j).y(),teb_.Pose(j).t(),teb_.Pose(j).theta());
+  //  }
     //ROS_INFO("after optimize:x:%lf y:%lf theta:%lf t:%lf",teb_.PoseGoal()->x(),teb_.PoseGoal()->y(),teb_.PoseGoal()->theta(),teb_.BackPose().t()+teb_.timeDiffVertex()->dt());
 
     if (!success) 
@@ -785,40 +785,51 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
   double minDist=std::numeric_limits<double>::max();
   for (unsigned int i=0;i<dynamic_obstacles.size()-1;++i)
   {
-    if (i>=30)
+    if (i>=cfg_->trajectory.dynamic_predict_no)
       continue;
     if (debug)
     std::cout<<dynamic_obstacles[i]->getCentroid3D()[0]<<" "<<dynamic_obstacles[i]->getCentroid3D()[1]<<" "<<dynamic_obstacles[i]->getCentroid3D()[2]<<std::endl;
       if (computeDistPointToPoint(dynamic_obstacles[i]->getCentroid(),dynamic_obstacles[i+1]->getCentroid())<cfg_->obstacles.dynamic_ref_dist)
       {
         //ROS_INFO("dynamic obstacles index:%d->%ld",i,i+1);
-          double dist;
-          int index = teb_.findClosestTrajectoryPose3D(dynamic_obstacles[i]->getCentroid3D(),dynamic_obstacles[i+1]->getCentroid3D(),&dist,cfg_->optim.weight_dynamic_obstacle_time_factor);
-          if (index>0&&index<teb_.sizePoses()&&minDist>dist)
+        double dist;
+        auto points = teb_.findTrajectoryPose3DInDist(dynamic_obstacles[i]->getCentroid3D(),dynamic_obstacles[i+1]->getCentroid3D(),cfg_->obstacles.min_obstacle_dist*2,cfg_->optim.weight_dynamic_obstacle_time_factor);
+        for (int index:points)
+        {
+          if (index>0&&index<teb_.sizePoses())
           {
-            minDist=dist;
-            min_point_index=index;
-            min_obstacle_index = i;
+            //ROS_INFO("add edge:%d",ve.size());
+            ve.push_back(std::make_pair(i,index));
+            EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle();
+            dynobst_edge->setVertex(0,teb_.PoseVertex(index));
+            dynobst_edge->setInformation(information);
+            std::vector<ObstaclePtr> points(2);
+            points[0]=dynamic_obstacles[i];
+            points[1]=dynamic_obstacles[i+1];
+            dynobst_edge->setParameters(*cfg_, robot_model_.get(),points);
+            optimizer_->addEdge(dynobst_edge);
           }
+        }
+          
             
           //ROS_INFO("local point:%d, the distance is:%lf",index,dist);
           
       }
   }
-  if (minDist<cfg_->obstacles.min_obstacle_dist*4&&min_obstacle_index!=-1&&min_point_index!=-1)
-  {
-    ve.push_back(std::make_pair(min_obstacle_index,min_point_index));
-              //ROS_INFO("add into teb");
-    EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle();
-    //ROS_INFO("add edge index:%d size:%d %lf %lf",min_point_index,teb_.sizePoses(), teb_.PoseVertex(min_point_index)->x(),teb_.PoseVertex(min_point_index)->y());
-    dynobst_edge->setVertex(0,teb_.PoseVertex(min_point_index));
-    dynobst_edge->setInformation(information);
-    std::vector<ObstaclePtr> points(2);
-    points[0]=dynamic_obstacles[min_obstacle_index];
-    points[1]=dynamic_obstacles[min_obstacle_index+1];
-    dynobst_edge->setParameters(*cfg_, robot_model_.get(),points);
-    optimizer_->addEdge(dynobst_edge);
-  }
+  // if (minDist<cfg_->obstacles.min_obstacle_dist*4&&min_obstacle_index!=-1&&min_point_index!=-1)
+  // {
+  //   ve.push_back(std::make_pair(min_obstacle_index,min_point_index));
+  //             //ROS_INFO("add into teb");
+  //   EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle();
+  //   //ROS_INFO("add edge index:%d size:%d %lf %lf",min_point_index,teb_.sizePoses(), teb_.PoseVertex(min_point_index)->x(),teb_.PoseVertex(min_point_index)->y());
+  //   dynobst_edge->setVertex(0,teb_.PoseVertex(min_point_index));
+  //   dynobst_edge->setInformation(information);
+  //   std::vector<ObstaclePtr> points(2);
+  //   points[0]=dynamic_obstacles[min_obstacle_index];
+  //   points[1]=dynamic_obstacles[min_obstacle_index+1];
+  //   dynobst_edge->setParameters(*cfg_, robot_model_.get(),points);
+  //   optimizer_->addEdge(dynobst_edge);
+  // }
   if (debug)
     std::cout<<"Edge"<<std::endl;
   for (auto edge:ve)
@@ -1553,7 +1564,7 @@ bool TebOptimalPlanner::isTrajectoryFeasible(base_local_planner::CostmapModel* c
   if (look_ahead_idx < 0 || look_ahead_idx >= teb().sizePoses())
     look_ahead_idx = teb().sizePoses();
   
-  for (int i=0; i <= look_ahead_idx; ++i)
+  for (int i=1; i <= look_ahead_idx; ++i)
   {           
     if ( (i<look_ahead_idx&&costmap_model->footprintCost(teb().Pose(i).x(), teb().Pose(i).y(), teb().Pose(i).theta(), footprint_spec, inscribed_radius, circumscribed_radius) == -1)
          ||(i==look_ahead_idx&&costmap_model->footprintCost(teb().PoseGoal()->x(), teb().PoseGoal()->y(), teb().PoseGoal()->theta(), footprint_spec, inscribed_radius, circumscribed_radius) == -1))
@@ -1567,29 +1578,47 @@ bool TebOptimalPlanner::isTrajectoryFeasible(base_local_planner::CostmapModel* c
       }
       return false;
     }
-    for (ObstContainer::const_iterator obst = obstacles_->begin(); obst != obstacles_->end(); ++obst)
-    {
-       // ROS_INFO("inner edge dynamic");
-      if (!(*obst)->isDynamic())
-        continue;
+    // for (ObstContainer::const_iterator obst = obstacles_->begin(); obst != obstacles_->end(); ++obst)
+    // {
+    //    // ROS_INFO("inner edge dynamic");
+    //   if (!(*obst)->isDynamic())
+    //     continue;
 
-      // Skip first and last pose, as they are fixed
-      //double time = teb_.TimeDiff(0);
-      //ROS_INFO("dynamic position:%lf %lf t:%lf",obst->get()->getCentroid()[0],obst->get()->getCentroid()[1],obst->get()->getTime());
-      //ROS_INFO("local point:%lf %lf t:%lf",teb_.PoseVertex(i)->x(),teb_.PoseVertex(i)->y(),teb_.PoseVertex(i)->t());
-      double dist;
-      if (i<teb().sizePoses())
-        dist = robot_model_->estimateSpatioTemporalDistance(teb_.PoseVertex(i)->pose(), obst->get());
-      else
-          dist = robot_model_->estimateSpatioTemporalDistance(PoseSE3(teb_.PoseGoal()->pose(),teb_.BackPose().t()+teb_.getTimeDiff()), obst->get());
-      //
-      if (dist<0.1)//cfg_->obstacles.min_obstacle_dist)
-      {
-          // ROS_INFO("index:%d dist to dynamic:%lf",i,dist);
-          return false;
-      }
+    //   // Skip first and last pose, as they are fixed
+    //   //double time = teb_.TimeDiff(0);
+    //   //ROS_INFO("dynamic position:%lf %lf t:%lf",obst->get()->getCentroid()[0],obst->get()->getCentroid()[1],obst->get()->getTime());
+    //   //ROS_INFO("local point:%lf %lf t:%lf",teb_.PoseVertex(i)->x(),teb_.PoseVertex(i)->y(),teb_.PoseVertex(i)->t());
+    //   double dist;
+    //   if (i<teb().sizePoses())
+    //     dist = robot_model_->estimateSpatioTemporalDistance(teb_.PoseVertex(i)->pose(), obst->get());
+    //   else
+    //       dist = robot_model_->estimateSpatioTemporalDistance(PoseSE3(teb_.PoseGoal()->pose(),teb_.BackPose().t()+teb_.getTimeDiff()), obst->get());
+    //   //
+    //   if for (ObstContainer::const_iterator obst = obstacles_->begin(); obst != obstacles_->end(); ++obst)
+    //   {
+    //    // ROS_INFO("inner edge dynamic");
+    //   if (!(*obst)->isDynamic())
+    //     continue;
 
-    }
+    //   // Skip first and last pose, as they are fixed
+    //   //double time = teb_.TimeDiff(0);
+    //   //ROS_INFO("dynamic position:%lf %lf t:%lf",obst->get()->getCentroid()[0],obst->get()->getCentroid()[1],obst->get()->getTime());
+    //   //ROS_INFO("local point:%lf %lf t:%lf",teb_.PoseVertex(i)->x(),teb_.PoseVertex(i)->y(),teb_.PoseVertex(i)->t());
+    //   double di // ROS_INFO("index:%d dist to dynamic:%lf",i,dist);
+    //       // if (i<teb().sizePoses())
+    //       // {
+    //       //   ROS_INFO("pose:%lf %lf %lf",teb_.PoseVertex(i)->x(),teb_.PoseVertex(i)->y(),teb_.PoseVertex(i)->t());
+    //       //   ROS_INFO("obst:%lf %lf %lf",obst->get()->getCentroid3D()[0],obst->get()->getCentroid3D()[1],obst->get()->getCentroid3D()[2]);
+    //       // }
+    //       // else
+    //       // {
+    //       //   ROS_INFO("pose:%lf %lf %lf",teb_.PoseGoal()->x(),teb_.PoseGoal()->y(),teb_.BackPose().t()+teb_.getTimeDiff());
+    //       //   ROS_INFO("obst:%lf %lf %lf",obst->get()->getCentroid3D()[0],obst->get()->getCentroid3D()[1],obst->get()->getCentroid3D()[2]);
+    //       // }
+    //       return false;
+    //   }
+
+    // }
     //ROS_INFO("end compute");
     // Checks if the distance between two poses is higher than the robot radius or the orientation diff is bigger than the specified threshold
     // and interpolates in that case.
