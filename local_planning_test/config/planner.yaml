@@ -1,6 +1,6 @@
 controller_frequency: 10.0
 recovery_behaviour_enabled: true
-planner_frequency: 5.0
+planner_frequency: 1.0
 NavfnROS:
   allow_unknown: true # Specifies whether or not to allow navfn to create plans that traverse unknown space.
   default_tolerance: 0.1 # A tolerance on the goal point for the planner.
@@ -108,10 +108,10 @@ TebLocalPlannerROS:
   include_dynamic_obstacles: True
   force_reinit_new_goal_dist: 1.0
   onmi_type: False
-  dynamic_predict_no: 100
+  dynamic_predict_no: 50
   # Robot
          
-  max_vel_x: 0.2
+  max_vel_x: 0.5
   max_vel_x_backwards: 0.1
   max_vel_theta: 1.0
   acc_lim_x: 1.0
@@ -163,13 +163,13 @@ TebLocalPlannerROS:
   weight_kinematics_nh: 1000
   weight_kinematics_forward_drive: 1
   weight_kinematics_turning_radius: 1
-  weight_optimaltime: 1
-  weight_shortest_path: 1
+  weight_optimaltime: 0
+  weight_shortest_path: 10
   weight_obstacle: 50
   weight_dynamic_obstacle: 50
   weight_dynamic_obstacle_inflation: 50
   alternative_time_cost: false # not in use yet 
-  weight_dynamic_obstacle_time_factor: 0.2
+  weight_dynamic_obstacle_time_factor: 0.1
   # Homotopy Class Planner
 
   enable_homotopy_class_planning: false

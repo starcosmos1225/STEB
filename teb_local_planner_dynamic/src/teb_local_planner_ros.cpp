@@ -168,6 +168,7 @@ void TebLocalPlannerROS::initialize(std::string name, tf::TransformListener* tf,
         
     // setup callback for custom obstacles
     custom_obst_sub_ = nh.subscribe("obstacles", 1, &TebLocalPlannerROS::customObstacleCB, this);
+    dynamic_obst_sub_ = nh.subscribe("dynamic_obstacles", 1, &TebLocalPlannerROS::dynamicObstacleCB, this);
 
     // setup callback for custom via-points
     via_points_sub_ = nh.subscribe("via_points", 1, &TebLocalPlannerROS::customViaPointsCB, this);
@@ -320,7 +321,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   
   // also consider custom obstacles (must be called after other updates, since the container is not cleared)
   updateObstacleContainerWithCustomObstacles();
-  
+  updateObstacleContainerWithdynamicObstacles();
     
   // Do not allow config changes during the following optimization step
   boost::mutex::scoped_lock cfg_lock(cfg_.configMutex());
@@ -535,11 +536,11 @@ void TebLocalPlannerROS::updateObstacleContainerWithCustomObstacles()
         Eigen::Vector3d vel(custom_obstacle_msg_.obstacles.at(i).velocities.twist.linear.x,
                             custom_obstacle_msg_.obstacles.at(i).velocities.twist.linear.y,
                             0.0);
-        Eigen::Vector2d transformed_pos = (obstacle_to_map_eig * pos).head(2);
-        Eigen::Vector2d transformed_vel = (obstacle_to_map_eig * vel).head(2);
-        //ROS_INFO("transform from %s to %s",custom_obstacle_msg_.header.frame_id.c_str(),global_frame_.c_str());
-        //ROS_INFO("pose:%lf %lf vel:%lf %lf",pos[0],pos[1],vel[0],vel[1]);
-        //ROS_INFO("transformed pose:%lf %lf transformed vel:%lf %lf",transformed_pos[0],transformed_pos[1],transformed_vel[0],transformed_vel[1]);
+        Eigen::Vector2d transformed_pos = pos.head(2);// (obstacle_to_map_eig * pos).head(2);
+        Eigen::Vector2d transformed_vel = vel.head(2);// (obstacle_to_map_eig * vel).head(2);
+        // ROS_INFO("transform from %s to %s",custom_obstacle_msg_.header.frame_id.c_str(),global_frame_.c_str());
+        // ROS_INFO("pose:%lf %lf vel:%lf %lf",pos[0],pos[1],vel[0],vel[1]);
+        // ROS_INFO("transformed pose:%lf %lf transformed vel:%lf %lf",transformed_pos[0],transformed_pos[1],transformed_vel[0],transformed_vel[1]);
         for (int t=0;t<cfg_.trajectory.dynamic_predict_no;++t)
         {
             double time_i = cfg_.trajectory.dynamic_dt*t;
@@ -636,7 +637,91 @@ void TebLocalPlannerROS::updateObstacleContainerWithCustomObstacles()
     }
   }
 }
+void TebLocalPlannerROS::updateObstacleContainerWithdynamicObstacles()
+{
+  // Add custom obstacles obtained via message
+  boost::mutex::scoped_lock l(custom_obst_mutex_);
 
+  if (!dynamic_obstacle_msg_.obstacles.empty())
+  {
+    // We only use the global header to specify the obstacle coordinate system instead of individual ones
+    Eigen::Affine3d obstacle_to_map_eig;
+    try 
+    {
+      tf::StampedTransform obstacle_to_map;
+      tf_->waitForTransform(global_frame_, ros::Time(0),
+            dynamic_obstacle_msg_.header.frame_id, ros::Time(0),
+            dynamic_obstacle_msg_.header.frame_id, ros::Duration(0.5));
+      tf_->lookupTransform(global_frame_, ros::Time(0),
+          dynamic_obstacle_msg_.header.frame_id, ros::Time(0), 
+          dynamic_obstacle_msg_.header.frame_id, obstacle_to_map);
+      tf::transformTFToEigen(obstacle_to_map, obstacle_to_map_eig);
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("%s",ex.what());
+      obstacle_to_map_eig.setIdentity();
+    }
+    for (size_t i=0; i<dynamic_obstacle_msg_.obstacles.size(); ++i)
+    {
+      if (dynamic_obstacle_msg_.obstacles.at(i).polygon.points.size() == 1 && dynamic_obstacle_msg_.obstacles.at(i).radius > 0 ) // circle
+      {
+        Eigen::Vector3d pos( dynamic_obstacle_msg_.obstacles.at(i).polygon.points.front().x,
+                             dynamic_obstacle_msg_.obstacles.at(i).polygon.points.front().y,
+                             0.0 );
+        double time = dynamic_obstacle_msg_.obstacles.at(i).polygon.points.front().z;
+        Eigen::Vector2d transformed_pos = pos.head(2);// (obstacle_to_map_eig * pos).head(2);
+        obstacles_.push_back(ObstaclePtr(new CircularObstacle( transformed_pos, dynamic_obstacle_msg_.obstacles.at(i).radius,&cfg_,time)));
+        obstacles_.back()->setDynamic(true);
+      }
+      else if (dynamic_obstacle_msg_.obstacles.at(i).polygon.points.size() == 1 ) // point
+      {
+        Eigen::Vector3d pos( dynamic_obstacle_msg_.obstacles.at(i).polygon.points.front().x,
+                             dynamic_obstacle_msg_.obstacles.at(i).polygon.points.front().y,
+                             0.0 );
+        Eigen::Vector2d transformed_pos = (obstacle_to_map_eig * pos).head(2);
+        double time = dynamic_obstacle_msg_.obstacles.at(i).polygon.points.front().z;
+        obstacles_.push_back(ObstaclePtr(new PointObstacle( transformed_pos, &cfg_,time )));
+        obstacles_.back()->setDynamic(true);
+      }
+      else if (dynamic_obstacle_msg_.obstacles.at(i).polygon.points.size() == 2 ) // line
+      {
+        Eigen::Vector3d line_start( dynamic_obstacle_msg_.obstacles.at(i).polygon.points.front().x,
+                                    dynamic_obstacle_msg_.obstacles.at(i).polygon.points.front().y,
+                                    0.0 );
+        Eigen::Vector3d line_end( dynamic_obstacle_msg_.obstacles.at(i).polygon.points.back().x,
+                                  dynamic_obstacle_msg_.obstacles.at(i).polygon.points.back().y,
+                                  0.0 );
+        double time = dynamic_obstacle_msg_.obstacles.at(i).polygon.points.front().z;
+        Eigen::Vector2d transformed_start = (obstacle_to_map_eig * line_start).head(2);
+        Eigen::Vector2d transformed_end = (obstacle_to_map_eig * line_end).head(2);
+        obstacles_.push_back(ObstaclePtr(new LineObstacle( transformed_start,transformed_end, &cfg_,time)));
+        obstacles_.back()->setDynamic(true);
+      }
+      else if (dynamic_obstacle_msg_.obstacles.at(i).polygon.points.empty())
+      {
+        ROS_WARN("Invalid custom obstacle received. List of polygon vertices is empty. Skipping...");
+        continue;
+      }
+      else // polygon
+      {
+          double time = dynamic_obstacle_msg_.obstacles.at(i).polygon.points[0].z;
+          PolygonObstacle* polyobst = new PolygonObstacle(&cfg_,time);
+          for (size_t j=0; j<dynamic_obstacle_msg_.obstacles.at(i).polygon.points.size(); ++j)
+          {
+            Eigen::Vector3d pos( dynamic_obstacle_msg_.obstacles.at(i).polygon.points[j].x,
+                                 dynamic_obstacle_msg_.obstacles.at(i).polygon.points[j].y,
+                                  0.0);
+            Eigen::Vector2d transformed_pos = (obstacle_to_map_eig * pos).head(2);
+            polyobst->pushBackVertex(transformed_pos);
+          }  
+          polyobst->finalizePolygon();
+          polyobst->setDynamic(true);
+          obstacles_.push_back(ObstaclePtr(polyobst));
+      }
+    }
+  }
+}
 void TebLocalPlannerROS::updateViaPointsContainer(const std::vector<geometry_msgs::PoseStamped>& transformed_plan, double min_separation)
 {
   via_points_.clear();
@@ -1026,7 +1111,11 @@ void TebLocalPlannerROS::customObstacleCB(const costmap_converter::ObstacleArray
   boost::mutex::scoped_lock l(custom_obst_mutex_);
   custom_obstacle_msg_ = *obst_msg;  
 }
-
+void TebLocalPlannerROS::dynamicObstacleCB(const costmap_converter::ObstacleArrayMsg::ConstPtr& obst_msg)
+{
+  boost::mutex::scoped_lock l(custom_obst_mutex_);
+  dynamic_obstacle_msg_ = *obst_msg;  
+}
 void TebLocalPlannerROS::customViaPointsCB(const nav_msgs::Path::ConstPtr& via_points_msg)
 {
   ROS_INFO_ONCE("Via-points received. This message is printed once.");

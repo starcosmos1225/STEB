@@ -174,7 +174,7 @@ void TimedElasticBand::autoResize(double dt_ref, double dt_hysteresis, int min_s
         insertPose(i, newPose );
         modified = true;
       }
-      else if(timeDiff < dt_ref - dt_hysteresis && sizePoses()>min_samples) // only remove samples if size is larger than min_samples.
+      else if(timeDiff < dt_ref - dt_hysteresis&& timeDiff>0 && sizePoses()>min_samples) // only remove samples if size is larger than min_samples.
       {
           //ROS_INFO("delete %d",i);
           double new_dt=0.0;
@@ -190,6 +190,10 @@ void TimedElasticBand::autoResize(double dt_ref, double dt_hysteresis, int min_s
 
 
          modified = true;
+      }else if (timeDiff<=0)
+      {
+        double new_dt = estimateDeltaT(Pose(i-1),Pose(i).toPoseSE2(),max_vel_x,max_vel_theta);
+        Pose(i).t() = Pose(i-1).t() + new_dt;
       }
     }
     double timeDiff = timeDiffVertex()->dt();

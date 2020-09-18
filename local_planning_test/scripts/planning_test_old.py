@@ -11,7 +11,6 @@ import tf2_ros
 import tf
 import tf2_geometry_msgs
 import numpy as np
-import math
 from nav_msgs.msg import Odometry
 h1_odom = None
 h2_odom = None
@@ -19,8 +18,6 @@ h3_odom = None
 tf_buffer = None
 tf_listener_1 = None
 store = []
-predict_no = 50
-dynamic_dt = 0.2
 def get_velocity(c):
     if c == 'a' or c == 'A':
         return 0, 0.1
@@ -156,13 +153,10 @@ def run():
     sub_h1_pose = rospy.Subscriber("/odometry/filtered", Odometry, h1_odom_cb)
     sub_h2_pose = rospy.Subscriber("/h2/odometry/filtered", Odometry, h2_odom_cb)
     sub_h3_pose = rospy.Subscriber("/h3/odometry/filtered", Odometry, h3_odom_cb)
-    pub_h1_obstacless = rospy.Publisher("/move_base/TebLocalPlannerROS/dynamic_obstacles", ObstacleArrayMsg, queue_size=1)
+    pub_h1_obstacless = rospy.Publisher("/move_base/TebLocalPlannerROS/obstacles", ObstacleArrayMsg, queue_size=1)
 
     rate = rospy.Rate(20)
     count = 0
-    h2_vx = 1.0
-    theta = 0.5
-    acc = 0.0
     while not rospy.is_shutdown():
         # try:
         #     (trans, rot) = tf_listener.lookupTransform('/map', '/h2/odom', rospy.Time(0))
@@ -174,44 +168,38 @@ def run():
         # print(h2_odom)
         # print(h3_odom)
         if h2_odom is not None and h3_odom is not None:
-
+            h2_obstacles = ObstacleMsg()
+            h2_obstacles.header = h2_odom.header
+            point = Point32()
+            point.x = h2_odom.pose.pose.position.x
+            point.y = h2_odom.pose.pose.position.y
+            point.z = h2_odom.pose.pose.position.z
+            h2_obstacles.polygon.points.append(point)
+            h2_obstacles.radius = 0.5
+            h2_obstacles.velocities = h2_odom.twist
+            #print("h2 velocity:{} {}".format(h2_odom.twist.twist.linear.x,h2_odom.twist.twist.linear.y))
+            h2_obstacles.orientation = h2_odom.pose.pose.orientation
+            h3_obstacles = ObstacleMsg()
+            point1 = Point32()
+            point1.x = h3_odom.pose.pose.position.x
+            point1.y = h3_odom.pose.pose.position.y
+            point1.z = h3_odom.pose.pose.position.z
+            h3_obstacles.header = h3_odom.header
+            h3_obstacles.polygon.points.append(point1)
+            h3_obstacles.radius = 0.5
+            h3_obstacles.velocities = h3_odom.twist
+            h3_obstacles.orientation = h3_odom.pose.pose.orientation
             msg = ObstacleArrayMsg()
-            msg.header = h2_odom.header
-            nowTime = rospy.Time.now().secs
-            position = np.zeros((2,1))
-            position[0, 0] = h2_odom.pose.pose.position.x
-            position[1, 0] = h2_odom.pose.pose.position.y
-            vx = h2_odom.twist.twist.linear.x
-            vy = h2_odom.twist.twist.linear.y
-            acc_x = acc*vx/np.sqrt(vx*vx+vy*vy)
-            acc_y = acc*vy/np.sqrt(vx*vx+vy*vy)
-            for i in range(predict_no):
-                h2_obstacles = ObstacleMsg()
-                h2_obstacles.header = h2_odom.header
-                point = Point32()
-                dt = dynamic_dt
-                next_vx = max(-1.0,min(acc_x*20*dt+vx,0.0))
-                next_vy = max(-1.0,min(acc_y*20*dt+vy,0.0))
-                point.x = position[0, 0] + 0.5*(next_vx+vx)*dt
-                point.y = position[1, 0] + 0.5*(next_vy+vy)*dt
-                position[0, 0] = point.x
-                position[1, 0] = point.y
-                vx = next_vx
-                vy = next_vy
-                point.z = nowTime + dynamic_dt*i
-                h2_obstacles.polygon.points.append(point)
-                h2_obstacles.radius = 0.5
-                h2_obstacles.velocities = h2_odom.twist
-            	#print("h2:{} {} {} vx {} vy {}".format(point.x,point.y,point.z,vx,vy))
-                h2_obstacles.orientation = h2_odom.pose.pose.orientation
-                msg.obstacles.append(h2_obstacles)
-            #pub_h1_obstacless.publish(msg)
+            msg.header = h2_obstacles.header
+            msg.obstacles.append(h2_obstacles)
+            msg.obstacles.append(h3_obstacles)
+            pub_h1_obstacless.publish(msg)
         if count < 20:
             #print("begin pub")
             msg = PoseStamped()
             msg.header.seq = count
             msg.header.frame_id = "map"
-            msg.pose.position.x = 3
+            msg.pose.position.x = -3
             msg.pose.position.y = 0
             msg.pose.orientation.x = 0.0
             msg.pose.orientation.y = 0.0
@@ -219,18 +207,10 @@ def run():
             msg.pose.orientation.w = 1.0
             pub_h1_goal.publish(msg)
         # if 40 < count < 190: this seting will hit the robot
-        if 20< count:
+        if 20< count< 680:
             msg_h2 = Twist()
-            msg_h2.linear.x = min(h2_vx,1.0)
-            msg_h2.angular.z = theta
-            #if count==150:
-            #    acc = -0.01
-            #if count==270:
-            #    acc = 0
-            h2_vx += acc
-            if h2_vx <0:
-                acc=0
-                h2_vx=0
+            msg_h2.linear.x = 0.1
+            msg_h2.angular.z = 0.0
             pub_h2.publish(msg_h2)
         if 20< count < 1800:
             msg_h3 = Twist()

@@ -785,39 +785,81 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
   int min_point_index=-1;
   int min_obstacle_index=-1;
   double minDist=std::numeric_limits<double>::max();
-  for (unsigned int i=0;i<dynamic_obstacles.size()-1;++i)
+  for (unsigned int i=0;i<dynamic_obstacles.size();++i)
   {
-    if (i>=cfg_->trajectory.dynamic_predict_no)
-      continue;
+    //if (i>=cfg_->trajectory.dynamic_predict_no)
+      //continue;
     if (debug)
     std::cout<<dynamic_obstacles[i]->getCentroid3D()[0]<<" "<<dynamic_obstacles[i]->getCentroid3D()[1]<<" "<<dynamic_obstacles[i]->getCentroid3D()[2]<<std::endl;
+  }    
+  for (int j=1;j<teb_.sizePoses();j++)
+  {
+    int min_obst=-1;
+    double min_dist = std::numeric_limits<double>::max();
+    for (unsigned int i=0;i<dynamic_obstacles.size()-1;++i)
+    {
+      //if (i>=cfg_->trajectory.dynamic_predict_no)
+        //continue;
       if (computeDistPointToPoint(dynamic_obstacles[i]->getCentroid(),dynamic_obstacles[i+1]->getCentroid())<cfg_->obstacles.dynamic_ref_dist)
       {
-        //ROS_INFO("dynamic obstacles index:%d->%ld",i,i+1);
-        double dist;
-        auto points = teb_.findTrajectoryPose3DInDist(dynamic_obstacles[i]->getCentroid3D(),dynamic_obstacles[i+1]->getCentroid3D(),cfg_->obstacles.min_obstacle_dist*2,cfg_->optim.weight_dynamic_obstacle_time_factor);
-        for (int index:points)
+        
+        Eigen::Vector3d point(teb_.Pose(j).x(),teb_.Pose(j).y(),teb_.Pose(j).t());
+        double dist=distance_point_to_segment_3d(point,dynamic_obstacles[i]->getCentroid3D(),dynamic_obstacles[i+1]->getCentroid3D());
+        if (dist<min_dist&&dist>0)
         {
-          if (index>0&&index<teb_.sizePoses())
-          {
-            //ROS_INFO("add edge:%d",ve.size());
-            ve.push_back(std::make_pair(i,index));
-            EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle();
-            dynobst_edge->setVertex(0,teb_.PoseVertex(index));
-            dynobst_edge->setInformation(information);
-            std::vector<ObstaclePtr> pt(2);
-            pt[0]=dynamic_obstacles[i];
-            pt[1]=dynamic_obstacles[i+1];
-            dynobst_edge->setParameters(*cfg_, robot_model_.get(),pt);
-            optimizer_->addEdge(dynobst_edge);
-          }
+          min_obst=i;
+          min_dist=dist;
         }
+      }
+    }
+    if (min_obst>=0&&min_dist<cfg_->obstacles.min_obstacle_dist*4)
+    {
+      //ROS_INFO("add edge:%d",ve.size());
+      ve.push_back(std::make_pair(min_obst,j));
+      EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle();
+      dynobst_edge->setVertex(0,teb_.PoseVertex(j));
+      dynobst_edge->setInformation(information);
+      std::vector<ObstaclePtr> pt(2);
+      pt[0]=dynamic_obstacles[min_obst];
+      pt[1]=dynamic_obstacles[min_obst+1];
+      dynobst_edge->setParameters(*cfg_, robot_model_.get(),pt);
+      optimizer_->addEdge(dynobst_edge);
+    }
+    
+  }
+  // for (unsigned int i=0;i<dynamic_obstacles.size()-1;++i)
+  // {
+  //   if (i>=cfg_->trajectory.dynamic_predict_no)
+  //     continue;
+  //   if (debug)
+  //   std::cout<<dynamic_obstacles[i]->getCentroid3D()[0]<<" "<<dynamic_obstacles[i]->getCentroid3D()[1]<<" "<<dynamic_obstacles[i]->getCentroid3D()[2]<<std::endl;
+  //     if (computeDistPointToPoint(dynamic_obstacles[i]->getCentroid(),dynamic_obstacles[i+1]->getCentroid())<cfg_->obstacles.dynamic_ref_dist)
+  //     {
+  //       //ROS_INFO("dynamic obstacles index:%d->%ld",i,i+1);
+  //       double dist;
+  //       auto points = teb_.findTrajectoryPose3DInDist(dynamic_obstacles[i]->getCentroid3D(),dynamic_obstacles[i+1]->getCentroid3D(),(cfg_->obstacles.min_obstacle_dist+0.93)*2,cfg_->optim.weight_dynamic_obstacle_time_factor);
+  //       for (int index:points)
+  //       {
+  //         if (index>0&&index<teb_.sizePoses())
+  //         {
+  //           //ROS_INFO("add edge:%d",ve.size());
+  //           ve.push_back(std::make_pair(i,index));
+  //           EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle();
+  //           dynobst_edge->setVertex(0,teb_.PoseVertex(index));
+  //           dynobst_edge->setInformation(information);
+  //           std::vector<ObstaclePtr> pt(2);
+  //           pt[0]=dynamic_obstacles[i];
+  //           pt[1]=dynamic_obstacles[i+1];
+  //           dynobst_edge->setParameters(*cfg_, robot_model_.get(),pt);
+  //           optimizer_->addEdge(dynobst_edge);
+  //         }
+  //       }
           
             
-          //ROS_INFO("local point:%d, the distance is:%lf",index,dist);
+  //         //ROS_INFO("local point:%d, the distance is:%lf",index,dist);
           
-      }
-  }
+  //     }
+  // }
   // if (minDist<cfg_->obstacles.min_obstacle_dist*4&&min_obstacle_index!=-1&&min_point_index!=-1)
   // {
   //   ve.push_back(std::make_pair(min_obstacle_index,min_point_index));
