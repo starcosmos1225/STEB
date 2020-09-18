@@ -104,17 +104,17 @@ public:
       double radius_robot = robot_model_->getCircumscribedRadius();
       double radius_obstacles = obst1->getCircumscribedRadius();
       // ROS_INFO("robot:%lf obst:%lf",radius_robot,radius_obstacles);
-      Eigen::Vector3d line_start3d(line_start[0],line_start[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst1->getTime());
-      Eigen::Vector3d line_end3d(line_end[0],line_end[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst2->getTime());
-      Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],cfg_->optim.weight_dynamic_obstacle_time_factor*bandpt->t());
+      Eigen::Vector3d line_start3d(line_start[0],line_start[1],obst1->getTime());
+      Eigen::Vector3d line_end3d(line_end[0],line_end[1],obst2->getTime());
+      Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],bandpt->t());
       dv_ = line_end3d-line_start3d;
       dv_.normalize();
       Eigen::Vector3d cross_point;
       dist_ = std::max(1e-6,computeDistPointToLine3d(robot_point3d,line_start3d,line_end3d,&cross_point));
       cross_line_ = cross_point - robot_point3d;
       // ROS_INFO("radius:%lf",cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles);
-      _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles, cfg_->optim.penalty_epsilon);
-      _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist+radius_robot+radius_obstacles, 0.0);
+      _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist+0.5+radius_obstacles, cfg_->optim.penalty_epsilon);
+      _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist+0.5+radius_obstacles, 0.0);
       if (cfg_->optim.obstacle_cost_exponent != 1.0 && cfg_->obstacles.min_obstacle_dist > 0.0)
       {
         // Optional non-linear cost. Note the max cost (before weighting) is
@@ -142,9 +142,9 @@ public:
       //    _jacobianOplusXi( 0 , 3 ) = 0;
       //  }else
        {
-           _jacobianOplusXi( 0 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
-           _jacobianOplusXi( 0 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
-           _jacobianOplusXi( 0 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
+           _jacobianOplusXi( 0 , 0 ) = cross_line_[0]/dist_;//.dot(nx-dv_[0]*dv_)/dist_;
+           _jacobianOplusXi( 0 , 1 ) = cross_line_[1]/dist_;//.dot(ny-dv_[1]*dv_)/dist_;
+           _jacobianOplusXi( 0 , 2 ) = cfg_->optim.weight_dynamic_obstacle_time_factor*cross_line_[2]/dist_;//.dot(nz-dv_[2]*dv_)/dist_;
            _jacobianOplusXi( 0 , 3 ) = 0;
        }
       //  if (dist_>cfg_->obstacles.dynamic_obstacle_inflation_dist)
@@ -155,9 +155,9 @@ public:
       //    _jacobianOplusXi( 1 , 3 ) = 0;
       //  }else
        {
-           _jacobianOplusXi( 1 , 0 ) = cross_line_.dot(nx-dv_[0]*dv_)/dist_;
-           _jacobianOplusXi( 1 , 1 ) = cross_line_.dot(ny-dv_[1]*dv_)/dist_;
-           _jacobianOplusXi( 1 , 2 ) = cross_line_.dot(nz-dv_[2]*dv_)/dist_;
+           _jacobianOplusXi( 1 , 0 ) = cross_line_[0]/dist_;//.dot(nx-dv_[0]*dv_)/dist_;
+           _jacobianOplusXi( 1 , 1 ) = cross_line_[1]/dist_;//.dot(ny-dv_[1]*dv_)/dist_;
+           _jacobianOplusXi( 1 , 2 ) = cfg_->optim.weight_dynamic_obstacle_time_factor*cross_line_[2]/dist_;//.dot(nz-dv_[2]*dv_)/dist_;
            _jacobianOplusXi( 1 , 3 ) = 0;
        }
    }

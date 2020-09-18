@@ -804,7 +804,7 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
       {
         
         Eigen::Vector3d point(teb_.Pose(j).x(),teb_.Pose(j).y(),teb_.Pose(j).t());
-        double dist=distance_point_to_segment_3d(point,dynamic_obstacles[i]->getCentroid3D(),dynamic_obstacles[i+1]->getCentroid3D());
+        double dist=distance_point_to_segment_3d(point,dynamic_obstacles[i]->getCentroid3D(),dynamic_obstacles[i+1]->getCentroid3D(),true);
         if (dist<min_dist&&dist>0)
         {
           min_obst=i;
@@ -812,7 +812,7 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
         }
       }
     }
-    if (min_obst>=0&&min_dist<cfg_->obstacles.min_obstacle_dist*4)
+    if (min_obst>=0)//&&min_dist<cfg_->obstacles.min_obstacle_dist*4)
     {
       //ROS_INFO("add edge:%d",ve.size());
       ve.push_back(std::make_pair(min_obst,j));
