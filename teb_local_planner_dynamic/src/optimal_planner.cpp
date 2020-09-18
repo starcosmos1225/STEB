@@ -776,6 +776,8 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
       if ((*obst)->isDynamic())
           dynamic_obstacles.push_back(*obst);
   }
+  if (dynamic_obstacles.size()==0)
+        return;
   if (debug)
     std::cout<<"dynamic obstacles"<<std::endl;
   
@@ -803,10 +805,10 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
             EdgeDynamicObstacle* dynobst_edge = new EdgeDynamicObstacle();
             dynobst_edge->setVertex(0,teb_.PoseVertex(index));
             dynobst_edge->setInformation(information);
-            std::vector<ObstaclePtr> points(2);
-            points[0]=dynamic_obstacles[i];
-            points[1]=dynamic_obstacles[i+1];
-            dynobst_edge->setParameters(*cfg_, robot_model_.get(),points);
+            std::vector<ObstaclePtr> pt(2);
+            pt[0]=dynamic_obstacles[i];
+            pt[1]=dynamic_obstacles[i+1];
+            dynobst_edge->setParameters(*cfg_, robot_model_.get(),pt);
             optimizer_->addEdge(dynobst_edge);
           }
         }

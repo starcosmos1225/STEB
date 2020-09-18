@@ -108,7 +108,7 @@ TebLocalPlannerROS:
   include_dynamic_obstacles: True
   force_reinit_new_goal_dist: 1.0
   onmi_type: False
-  dynamic_predict_no: 50
+  dynamic_predict_no: 100
   # Robot
          
   max_vel_x: 0.2
@@ -169,7 +169,7 @@ TebLocalPlannerROS:
   weight_dynamic_obstacle: 50
   weight_dynamic_obstacle_inflation: 50
   alternative_time_cost: false # not in use yet 
-  weight_dynamic_obstacle_time_factor: 100
+  weight_dynamic_obstacle_time_factor: 0.2
   # Homotopy Class Planner
 
   enable_homotopy_class_planning: false

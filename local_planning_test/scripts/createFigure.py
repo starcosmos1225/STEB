@@ -10,7 +10,7 @@ fig = plt.figure()
 
 ax = fig.gca(projection='3d')
 ax.legend()
-dynamic_predict_no=50
+dynamic_predict_no=100
 max_point_no=500
 def drawStatic(line):
     theta = np.ones(100)

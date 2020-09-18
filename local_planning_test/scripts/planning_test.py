@@ -199,7 +199,7 @@ def run():
             msg = PoseStamped()
             msg.header.seq = count
             msg.header.frame_id = "map"
-            msg.pose.position.x = -5
+            msg.pose.position.x = -3
             msg.pose.position.y = 0
             msg.pose.orientation.x = 0.0
             msg.pose.orientation.y = 0.0
@@ -209,7 +209,7 @@ def run():
         # if 40 < count < 190: this seting will hit the robot
         if 20< count< 380:
             msg_h2 = Twist()
-            msg_h2.linear.x = 1.0
+            msg_h2.linear.x = 0.5
             msg_h2.angular.z = 0.0
             pub_h2.publish(msg_h2)
         if 20< count < 1800:
