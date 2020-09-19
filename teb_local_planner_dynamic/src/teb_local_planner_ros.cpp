@@ -641,7 +641,6 @@ void TebLocalPlannerROS::updateObstacleContainerWithdynamicObstacles()
 {
   // Add custom obstacles obtained via message
   boost::mutex::scoped_lock l(custom_obst_mutex_);
-
   if (!dynamic_obstacle_msg_.obstacles.empty())
   {
     // We only use the global header to specify the obstacle coordinate system instead of individual ones

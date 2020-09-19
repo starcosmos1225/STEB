@@ -260,6 +260,22 @@ inline double computeDistPointToLine3d(const Eigen::Vector3d& point,const Eigen:
         (*cross_point) = crossPoint;
     return (crossPoint-point).norm();
 }
+inline double computeDistPointToLine3dQuadratic(const Eigen::Vector3d& point,const Eigen::Vector3d& line1,
+                                     const Eigen::Vector3d& line2,Eigen::Vector3d* cross_point=nullptr)
+{
+    Eigen::Vector3d line_direction = line2-line1;
+    line_direction.normalize();
+    Eigen::Vector3d point_line1 = point-line1;
+    double t = line_direction.dot(point_line1)/(line_direction.squaredNorm());
+    Eigen::Vector3d crossPoint;
+    crossPoint = line1+t*line_direction;
+    double dt2 = 1.0*pow(crossPoint[2]-point[2],2);
+    double time_dist_2 = dt2*dt2;
+    double space_dist_2 = pow(crossPoint[0]-point[0],2)+pow(crossPoint[1]-point[1],2);
+    if (cross_point)
+        (*cross_point) = crossPoint;
+    return sqrt(space_dist_2+time_dist_2);
+}
 inline double computeNearestPoint(const Eigen::Vector2d& center,double radius,
                                   const Eigen::Vector2d& point1,const Eigen::Vector2d& point2,
                                   Eigen::Vector2d& circle_point)

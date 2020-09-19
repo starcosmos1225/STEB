@@ -21,6 +21,9 @@ tf_listener_1 = None
 store = []
 predict_no = 50
 dynamic_dt = 0.2
+radius = 2.0
+center = [5,0.0]
+initTheta = 3.1415926
 def get_velocity(c):
     if c == 'a' or c == 'A':
         return 0, 0.1
@@ -135,17 +138,76 @@ def h3_odom_cb(data):
     h3_odom.twist.twist.linear.y = vx*np.sin(yaw)
     h3_odom.twist.twist.linear.z = 0.0
 
+
 def storage():
     if h1_odom is None or h2_odom is None:
         return
     time = rospy.Time.now()
-    a=open('test.txt', 'a')
+    a = open('test.txt', 'a')
     a.write("{} {} {} {} {}\n".format(h1_odom.pose.pose.position.x,h1_odom.pose.pose.position.y,h2_odom.pose.pose.position.x,h2_odom.pose.pose.position.y,time))
     a.close()
 
 
+def computelinearVelocity(dt, vx, vy, position, acc_x, acc_y, time):
+    global h2_odom
+    h2_obstacles = ObstacleMsg()
+    h2_obstacles.header = h2_odom.header
+    point = Point32()
+    next_vx = max(-1.0, min(acc_x*20*dt + vx,0.0))
+    next_vy = max(-1.0, min(acc_y*20*dt + vy,0.0))
+    point.x = position[0, 0] + 0.5*(next_vx+vx)*dt
+    point.y = position[1, 0] + 0.5*(next_vy+vy)*dt
+    position[0, 0] = point.x
+    position[1, 0] = point.y
+    vx = next_vx
+    vy = next_vy
+    point.z = time
+    h2_obstacles.polygon.points.append(point)
+    h2_obstacles.radius = 0.5
+    h2_obstacles.velocities = h2_odom.twist
+    #print("h2:{} {} {} vx {} vy {}".format(point.x,point.y,point.z,vx,vy))
+    h2_obstacles.orientation = h2_odom.pose.pose.orientation
+    return h2_obstacles, vx, vy, position
+
+
+def computeCircle(dt, angular, theta, time):
+    global center, radius, h2_odom
+    h2_obstacles = ObstacleMsg()
+    h2_obstacles.header = h2_odom.header
+    point = Point32()
+    next_angular = angular + theta*dt
+    newPosition = computePosition(center, radius, next_angular)
+    point.x = newPosition[0, 0]
+    point.y = newPosition[1, 0]
+    point.z = time
+    h2_obstacles.polygon.points.append(point)
+    h2_obstacles.radius = 0.5
+    h2_obstacles.velocities = h2_odom.twist
+    #print("h2:{} {} {} ".format(point.x,point.y,point.z))
+    h2_obstacles.orientation = h2_odom.pose.pose.orientation
+    return h2_obstacles, next_angular
+
+
+def computeAngle(p1,p2):
+    l = ((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)**0.5
+    dx = p1[0]-p2[0]
+    dy = p1[1]-p2[1]
+    costheta = dx/l
+    theta = math.acos(costheta)
+    if dy<0:
+        theta = 2*math.pi-theta
+    return theta
+
+def computePosition(c, r, angular):
+    dx = r*math.cos(angular)
+    dy = r*math.sin(angular)
+    p = np.zeros((2, 1))
+    p[0, 0] = c[0]+dx
+    p[1, 0] = c[1]+dy
+    return p
+
 def run():
-    global h2_odom,h3_odom, tf_buffer, tf_listener_1
+    global h2_odom,h3_odom, tf_buffer, tf_listener_1,center
     rospy.init_node('local_planning_test_script')
     tf_buffer = tf2_ros.Buffer(rospy.Duration(1200.0))  # tf buffer length
     tf_listener = tf2_ros.TransformListener(tf_buffer)
@@ -160,8 +222,8 @@ def run():
 
     rate = rospy.Rate(20)
     count = 0
-    h2_vx = 0.5
-    theta = 0.0
+    h2_vx = 1.0
+    theta = 0.5
     acc = 0.0
     while not rospy.is_shutdown():
         # try:
@@ -178,36 +240,21 @@ def run():
             msg = ObstacleArrayMsg()
             msg.header = h2_odom.header
             nowTime = rospy.Time.now().secs
-            position = np.zeros((2,1))
+            position = np.zeros((2, 1))
             position[0, 0] = h2_odom.pose.pose.position.x
             position[1, 0] = h2_odom.pose.pose.position.y
             vx = h2_odom.twist.twist.linear.x
             vy = h2_odom.twist.twist.linear.y
             acc_x = acc*vx/np.sqrt(vx*vx+vy*vy)
             acc_y = acc*vy/np.sqrt(vx*vx+vy*vy)
+            angular = computeAngle(position, center)
             for i in range(predict_no):
-                h2_obstacles = ObstacleMsg()
-                h2_obstacles.header = h2_odom.header
-                point = Point32()
-                dt = dynamic_dt
-                next_vx = max(-1.0,min(acc_x*20*dt+vx,0.0))
-                next_vy = max(-1.0,min(acc_y*20*dt+vy,0.0))
-                point.x = position[0, 0] + 0.5*(next_vx+vx)*dt
-                point.y = position[1, 0] + 0.5*(next_vy+vy)*dt
-                position[0, 0] = point.x
-                position[1, 0] = point.y
-                vx = next_vx
-                vy = next_vy
-                point.z = nowTime + dynamic_dt*i
-                h2_obstacles.polygon.points.append(point)
-                h2_obstacles.radius = 0.5
-                h2_obstacles.velocities = h2_odom.twist
-            	#print("h2:{} {} {} vx {} vy {}".format(point.x,point.y,point.z,vx,vy))
-                h2_obstacles.orientation = h2_odom.pose.pose.orientation
+                # h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
+                h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
                 msg.obstacles.append(h2_obstacles)
             pub_h1_obstacless.publish(msg)
         if count < 20:
-            #print("begin pub")
+            # print("begin pub")
             msg = PoseStamped()
             msg.header.seq = count
             msg.header.frame_id = "map"
