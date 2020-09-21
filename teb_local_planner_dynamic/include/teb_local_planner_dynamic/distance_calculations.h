@@ -111,7 +111,28 @@ inline double distance_point_to_segment_3d(const Eigen::Ref<const Eigen::Vector3
   Eigen::Vector3d cross_point = line_start+t*AB;
   return (point-cross_point).norm();
 }
-  
+inline double distance_point_to_segment_3d_space(const Eigen::Ref<const Eigen::Vector3d>& point, const Eigen::Ref<const Eigen::Vector3d>& line_start,
+ const Eigen::Ref<const Eigen::Vector3d>& line_end, bool ignore_no_cross=false)
+{
+  //Eigen::Vector3d AO = point-line_start;
+  //Eigen::Vector3d AB = line_end - line_start;
+  //Eigen::Vector3d BO = point - line_end;
+  double min_time = line_start[2]<line_end[2]?line_start[2]:line_end[2];
+  double max_time = line_start[2]<line_end[2]?line_end[2]:line_start[2];
+  if (point[2]<min_time||point[2]>max_time&&ignore_no_cross)
+    return -1;
+  if (fabs(line_end[2]-line_start[2])<1e-5)
+  {
+    Eigen::Vector2d line_start_2d = line_start.head(2);
+    Eigen::Vector2d line_end_2d = line_end.head(2);
+    Eigen::Vector2d point_2d = point.head(2);
+    return distance_point_to_segment_2d(point_2d,line_start_2d,line_end_2d);
+  }
+  double t = (point[2]-line_start[2])/(line_end[2]-line_start[2]);
+  Eigen::Vector2d mid(t*(line_end[0]-line_start[0])+line_start[0],t*(line_end[1]-line_start[1])+line_start[1]);
+  Eigen::Vector2d point_2d = point.head(2);
+  return (mid-point_2d).norm();
+}
 /**
  * @brief Helper function to check whether two line segments intersects
  * @param line1_start 2D point representing the start of the first line segment

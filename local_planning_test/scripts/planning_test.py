@@ -222,8 +222,8 @@ def run():
 
     rate = rospy.Rate(20)
     count = 0
-    h2_vx = 1.0
-    theta = 0.5
+    h2_vx = 0.2
+    theta = 0.0
     acc = 0.0
     while not rospy.is_shutdown():
         # try:
@@ -248,10 +248,14 @@ def run():
             acc_x = acc*vx/np.sqrt(vx*vx+vy*vy)
             acc_y = acc*vy/np.sqrt(vx*vx+vy*vy)
             angular = computeAngle(position, center)
+            teb_msg = ObstacleArrayMsg()
             for i in range(predict_no):
-                # h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
-                h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
+                h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
+                #h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
                 msg.obstacles.append(h2_obstacles)
+                if i ==0:
+                    teb_msg.obstacles.append(h2_obstacles)
+
             pub_h1_obstacless.publish(msg)
         if count < 20:
             # print("begin pub")

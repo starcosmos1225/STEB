@@ -51,6 +51,7 @@
 #include <teb_local_planner_dynamic/obstacles.h>
 #include <teb_local_planner_dynamic/teb_config.h>
 #include <teb_local_planner_dynamic/robot_footprint_model.h>
+#include <teb_local_planner_dynamic/distance_calculations.h>
 
 namespace teb_local_planner
 {
@@ -109,10 +110,11 @@ public:
       Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],cfg_->optim.weight_dynamic_obstacle_time_factor*bandpt->t());
       dv_ = line_end3d-line_start3d;
       dv_.normalize();
-      Eigen::Vector3d cross_point;
-      dist_ = std::max(1e-6,computeDistPointToLine3d(robot_point3d,line_start3d,line_end3d,&cross_point));
+      // Eigen::Vector3d cross_point;
+      //dist_ = std::max(1e-6,computeDistPointToLine3d(robot_point3d,line_start3d,line_end3d,&cross_point));
+      dist_ = std::max(1e-6,distance_point_to_segment_3d(robot_point3d,line_start3d,line_end3d));
       //ROS_INFO("dist_:%lf",dist_);
-      cross_line_ = cross_point - robot_point3d;
+      // cross_line _ = cross_point - robot_point3d;
       // ROS_INFO("radius:%lf",cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles);
       _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist+0.5+radius_obstacles, cfg_->optim.penalty_epsilon);
       _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist+0.5+radius_obstacles, 0.0);
