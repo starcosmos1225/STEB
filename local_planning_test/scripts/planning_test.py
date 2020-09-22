@@ -218,7 +218,8 @@ def run():
     sub_h1_pose = rospy.Subscriber("/odometry/filtered", Odometry, h1_odom_cb)
     sub_h2_pose = rospy.Subscriber("/h2/odometry/filtered", Odometry, h2_odom_cb)
     sub_h3_pose = rospy.Subscriber("/h3/odometry/filtered", Odometry, h3_odom_cb)
-    pub_h1_obstacless = rospy.Publisher("/move_base/TebLocalPlannerROS/dynamic_obstacles", ObstacleArrayMsg, queue_size=1)
+    #pub_h1_obstacless = rospy.Publisher("/move_base/TebLocalPlannerROS/dynamic_obstacles", ObstacleArrayMsg, queue_size=1)
+    pub_h1_obstacless = rospy.Publisher("/move_base/TebLocalPlannerROS/obstacles", ObstacleArrayMsg, queue_size=1)
 
     rate = rospy.Rate(20)
     count = 0
@@ -249,14 +250,27 @@ def run():
             acc_y = acc*vy/np.sqrt(vx*vx+vy*vy)
             angular = computeAngle(position, center)
             teb_msg = ObstacleArrayMsg()
+            teb_msg.header = h2_odom.header
             for i in range(predict_no):
-                h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
-                #h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
-                msg.obstacles.append(h2_obstacles)
                 if i ==0:
+                    h2_obstacles = ObstacleMsg()
+                    h2_obstacles.header = h2_odom.header
+                    point = Point32()
+                    point.x = position[0, 0]
+                    point.y = position[1, 0]
+                    #point.z = nowTime
+                    point.z = 0.0
+                    h2_obstacles.polygon.points.append(point)
+                    h2_obstacles.radius = 0.5
+                    h2_obstacles.velocities = h2_odom.twist
                     teb_msg.obstacles.append(h2_obstacles)
-
-            pub_h1_obstacless.publish(msg)
+                    #msg.obstacles.append(h2_obstacles)
+                else:
+                    h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
+                    #h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
+                    msg.obstacles.append(h2_obstacles)
+            #pub_h1_obstacless.publish(msg)
+            pub_h1_obstacless.publish(teb_msg)
         if count < 20:
             # print("begin pub")
             msg = PoseStamped()

@@ -105,9 +105,10 @@ public:
       double radius_robot = robot_model_->getCircumscribedRadius();
       double radius_obstacles = obst1->getCircumscribedRadius();
       // ROS_INFO("robot:%lf obst:%lf",radius_robot,radius_obstacles);
-      Eigen::Vector3d line_start3d(line_start[0],line_start[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst1->getTime());
-      Eigen::Vector3d line_end3d(line_end[0],line_end[1],cfg_->optim.weight_dynamic_obstacle_time_factor*obst2->getTime());
-      Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],cfg_->optim.weight_dynamic_obstacle_time_factor*bandpt->t());
+      double scale = (line_end-line_start).norm()/(obst2->getTime()-obst1->getTime())/cfg_->robot.max_vel_x;
+      Eigen::Vector3d line_start3d(line_start[0],line_start[1],scale*obst1->getTime());
+      Eigen::Vector3d line_end3d(line_end[0],line_end[1],scale*obst2->getTime());
+      Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],scale*bandpt->t());
       dv_ = line_end3d-line_start3d;
       dv_.normalize();
       // Eigen::Vector3d cross_point;
