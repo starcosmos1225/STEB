@@ -206,6 +206,7 @@ def computePosition(c, r, angular):
     p[1, 0] = c[1]+dy
     return p
 
+
 def run():
     global h2_odom,h3_odom, tf_buffer, tf_listener_1,center
     rospy.init_node('local_planning_test_script')
@@ -218,12 +219,12 @@ def run():
     sub_h1_pose = rospy.Subscriber("/odometry/filtered", Odometry, h1_odom_cb)
     sub_h2_pose = rospy.Subscriber("/h2/odometry/filtered", Odometry, h2_odom_cb)
     sub_h3_pose = rospy.Subscriber("/h3/odometry/filtered", Odometry, h3_odom_cb)
-    #pub_h1_obstacless = rospy.Publisher("/move_base/TebLocalPlannerROS/dynamic_obstacles", ObstacleArrayMsg, queue_size=1)
-    pub_h1_obstacless = rospy.Publisher("/move_base/TebLocalPlannerROS/obstacles", ObstacleArrayMsg, queue_size=1)
+    pub_h1_obstacless = rospy.Publisher("/move_base/TebLocalPlannerROS/dynamic_obstacles", ObstacleArrayMsg, queue_size=1)
+    #pub_h1_obstacless = rospy.Publisher("/move_base/TebLocalPlannerROS/obstacles", ObstacleArrayMsg, queue_size=1)
 
     rate = rospy.Rate(20)
     count = 0
-    h2_vx = 0.2
+    h2_vx = 1
     theta = 0.0
     acc = 0.0
     while not rospy.is_shutdown():
@@ -258,25 +259,25 @@ def run():
                     point = Point32()
                     point.x = position[0, 0]
                     point.y = position[1, 0]
-                    #point.z = nowTime
-                    point.z = 0.0
+                    point.z = nowTime
+                    #point.z = 0.0
                     h2_obstacles.polygon.points.append(point)
                     h2_obstacles.radius = 0.5
                     h2_obstacles.velocities = h2_odom.twist
                     teb_msg.obstacles.append(h2_obstacles)
-                    #msg.obstacles.append(h2_obstacles)
+                    msg.obstacles.append(h2_obstacles)
                 else:
                     h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
                     #h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
                     msg.obstacles.append(h2_obstacles)
-            #pub_h1_obstacless.publish(msg)
-            pub_h1_obstacless.publish(teb_msg)
+            pub_h1_obstacless.publish(msg)
+            #pub_h1_obstacless.publish(teb_msg)
         if count < 20:
             # print("begin pub")
             msg = PoseStamped()
             msg.header.seq = count
             msg.header.frame_id = "map"
-            msg.pose.position.x = 3
+            msg.pose.position.x = -4
             msg.pose.position.y = 0
             msg.pose.orientation.x = 0.0
             msg.pose.orientation.y = 0.0
@@ -302,9 +303,10 @@ def run():
             msg_h3.linear.x = 0.30#use teb set it 0.30,use steb set it 0.45
             msg_h3.angular.z = 0.0
             #pub_h3.publish(msg_h3)
-        if count >= 2800:
-            break
+        if count >= 400:
+            h2_vx=0
         count += 1
+        # save_position()
         storage()
         rate.sleep()
     return

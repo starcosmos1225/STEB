@@ -19,11 +19,11 @@ def drawStatic(line):
         x = L[0]*theta
         y = L[1]*theta
         ax.plot(x, y, z, color='orange', label="static obstacle")
-def drawCurve(data,c='red'):
+def drawCurve(data,c='hotpink'):
     x = data[:,0]
     y = data[:,1]
     z = data[:,2]
-    ax.plot(x,y,z,color=c,label="static obstacle")
+    ax.plot(x,y,z,color=c,label="static obstacle",linewidth=5)
     # x_l = []
     # y_l = []
     # z_l = []
@@ -212,20 +212,21 @@ def drawFig_test():
                 first=False
             else:
                 plt.cla()
-                ax.set_xlim(-9,9)
-                ax.set_ylim(-9,9)
-                ax.set_zlim(140, 180)
+                ax.set_xlim(0,4)
+                ax.set_ylim(-2,2)
+                ax.set_zlim(140, 160)
                 p = np.zeros((length,3))
                 for i in range(length):
                     p[i,:] = points[i,:]
-                drawCurve(data,c='blue')
-                drawCurve(p)
+                drawCurve(data,c='deepskyblue')
+                drawCurve(p,c='crimson')
                 for e in edges:
                     if e[0]<dynamic_predict_no:
-                        drawline(data[e[0],:],p[e[1],:])
+                        drawline(data[e[0],:],p[e[1],:],c='goldenrod')
                 
                 plt.draw()
                 plt.pause(0.5)
+                t=input("wait for key")
                 data = np.zeros((dynamic_predict_no,3))
                 points = np.zeros((max_point_no,3))
                 edges=[]

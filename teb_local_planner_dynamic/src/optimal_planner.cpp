@@ -295,12 +295,12 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
       //ROS_INFO("update pose optimize teb");
       teb_.updatePose(*human_pose);
   }
-  std::cout<<"plan point:"<<std::endl;
-  for (int i=0;i<teb_.sizePoses();++i)
-  {
-    std::cout<<teb_.Pose(i).x()<<" "<<teb_.Pose(i).y()<<" "<<teb_.Pose(i).t()<<std::endl;  
+  //std::cout<<"plan point:"<<std::endl;
+  //for (int i=0;i<teb_.sizePoses();++i)
+  //{
+    //std::cout<<teb_.Pose(i).x()<<" "<<teb_.Pose(i).y()<<" "<<teb_.Pose(i).t()<<std::endl;  
       //ROS_INFO("index %d: %lf %lf %lf",i,teb_.Pose(i).x(),teb_.Pose(i).y(),teb_.Pose(i).t());
-  }
+  //}
   //ROS_INFO("index %d: %lf %lf %lf",teb_.sizePoses(),teb_.PoseGoal()->x(),teb_.PoseGoal()->y(),teb_.BackPose().t()+teb_.timeDiffVertex()->dt());
 
   return true;
@@ -778,6 +778,7 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
   }
   if (dynamic_obstacles.size()==0)
         return;
+  debug=false;
   if (debug)
     std::cout<<"dynamic obstacles"<<std::endl;
   
