@@ -19,11 +19,11 @@ def drawStatic(line):
         x = L[0]*theta
         y = L[1]*theta
         ax.plot(x, y, z, color='orange', label="static obstacle")
-def drawCurve(data,c='hotpink'):
-    x = data[:,0]
-    y = data[:,1]
-    z = data[:,2]
-    ax.plot(x,y,z,color=c,label="static obstacle",linewidth=5)
+def drawCurve(data, c='hotpink'):
+    x = data[:, 0]
+    y = data[:, 1]
+    z = data[:, 2]
+    ax.plot(x, y, z, color=c, linewidth=5)
     # x_l = []
     # y_l = []
     # z_l = []
@@ -178,6 +178,47 @@ def drawFig3_2():
     #ax.set_zticks([])
     plt.show()
 
+def drawFig4_1_1():
+    fr_teb = open("teb_0.25_0.2.txt", "r")
+    fr_tseb = open("tseb_0.25_0.2.txt", "r")
+    lines_teb = fr_teb.readlines()
+    lines_tseb = fr_tseb.readlines()
+    length = min(len(lines_teb), len(lines_tseb))
+    data1 =  np.zeros((length, 3))
+    data2 = np.zeros((length, 3))
+    data_ob = np.zeros((length-100, 3))
+    index = 0
+    plt.cla()
+    ax.set_xlim(0, 4)
+    ax.set_ylim(-2, 2)
+    ax.set_zlim(140, 170)
+    for i in range(length):
+        l = lines_teb[i].strip().split()
+        l1 = lines_tseb[i].strip().split()
+        data1[index, 0] = eval(l[0])
+        data1[index, 1] = eval(l[1])
+        data1[index, 2] = eval(l[4])*1.0/(1e9)
+        #print(data1[index, 2])
+        data2[index, 0] = eval(l1[0])
+        data2[index, 1] = eval(l1[1])
+        data2[index, 2] = eval(l[4])*1.0/(1e9)
+        #print(data2[index, 2])
+        if i >= 0 and i < length-100:
+            data_ob[index-0, 0] = eval(l[2])
+            data_ob[index-0, 1] = eval(l[3])
+            data_ob[index-0, 2] = eval(l[4])*1.0/(1e9)
+        index+=1
+        #print(eval(l[4]))
+        #t = input("wait for key")
+    drawCurve(data_ob, c='deepskyblue')
+    drawCurve(data1, c='salmon')
+    drawCurve(data2, c='crimson')
+
+    plt.draw()
+    plt.pause(0.5)
+    t = input("wait for key")
+
+
 def drawFig_test():
     global fig
     fr = open("fig.txt")
@@ -250,4 +291,5 @@ def drawFig_test():
     fr.close()
 
 if __name__=='__main__':
-    drawFig_test()
+    #drawFig_test()
+    drawFig4_1_1()

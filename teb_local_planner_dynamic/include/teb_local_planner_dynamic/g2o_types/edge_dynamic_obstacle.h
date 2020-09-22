@@ -117,8 +117,8 @@ public:
       //ROS_INFO("dist_:%lf",dist_);
       // cross_line _ = cross_point - robot_point3d;
       // ROS_INFO("radius:%lf",cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles);
-      _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist+0.5+radius_obstacles, cfg_->optim.penalty_epsilon);
-      _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist+0.5+radius_obstacles, 0.0);
+      _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles, cfg_->optim.penalty_epsilon);
+      _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist+radius_robot+radius_obstacles, 0.0);
       if (cfg_->optim.obstacle_cost_exponent != 1.0 && cfg_->obstacles.min_obstacle_dist > 0.0)
       {
         // Optional non-linear cost. Note the max cost (before weighting) is

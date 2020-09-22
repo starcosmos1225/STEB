@@ -26,8 +26,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 <launch>
   <arg name="x1" default="-9.0" />
   <arg name="y1" default="0.0" />
-  <arg name="x2" default="-7.5" />
-  <arg name="y2" default="9.0" />
+  <arg name="x2" default="-6.0" />
+  <arg name="y2" default="4.5" />
   <!--<arg name="x3" default="-5.0" /> set -5.0 and v=0.5 will hit the h1-->
   <arg name="x3" default="0.0" /><!--set 1.6 and v=0.2 will hit the h1 set 2.4 and v=0.2 will see the wrong rotate-->
   <arg name="y3" default="-9" />
@@ -70,7 +70,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   </include>
   <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster_h2" args="$(arg x2) $(arg y2) 0 -1.5707963 0 0 /map h2/odom 100" />
 </group>
-
+<!--
 <group ns="h3">
   <include file="$(find local_planning_test)/launch/husky.launch">
     <arg name="namespace" value="h3" />
@@ -79,7 +79,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <arg name="initYaw" value="1.5707663" />
   </include>
   <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster_h2" args="$(arg x3) $(arg y3) 0 1.5707963 0 0 /map h3/odom 100" />
-</group>
+</group>-->
 
 <include file="$(find local_planning_test)/launch/view_robot.launch"/>
 </launch>
