@@ -19,11 +19,11 @@ def drawStatic(line):
         x = L[0]*theta
         y = L[1]*theta
         ax.plot(x, y, z, color='orange', label="static obstacle")
-def drawCurve(data, c='hotpink'):
+def drawCurve(data, c='hotpink',l='None'):
     x = data[:, 0]
     y = data[:, 1]
     z = data[:, 2]
-    ax.plot(x, y, z, color=c, linewidth=5)
+    ax.plot(x, y, z, color=c, label=l, linewidth=2)
     # x_l = []
     # y_l = []
     # z_l = []
@@ -179,8 +179,8 @@ def drawFig3_2():
     plt.show()
 
 def drawFig4_1_1():
-    fr_teb = open("teb_0.25_0.2.txt", "r")
-    fr_tseb = open("tseb_0.25_0.2.txt", "r")
+    fr_teb = open("tseb_accelerate.txt", "r")
+    fr_tseb = open("tseb_st_accelerate.txt", "r")
     lines_teb = fr_teb.readlines()
     lines_tseb = fr_tseb.readlines()
     length = min(len(lines_teb), len(lines_tseb))
@@ -210,10 +210,10 @@ def drawFig4_1_1():
         index+=1
         #print(eval(l[4]))
         #t = input("wait for key")
-    drawCurve(data_ob, c='deepskyblue')
-    drawCurve(data1, c='salmon')
-    drawCurve(data2, c='crimson')
-
+    drawCurve(data_ob, c='deepskyblue', l='Obstacle')
+    drawCurve(data1, c='salmon', l='TEB')
+    drawCurve(data2, c='crimson', l='TSEB')
+    plt.legend()
     plt.draw()
     plt.pause(0.5)
     t = input("wait for key")

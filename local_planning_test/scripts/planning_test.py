@@ -224,9 +224,9 @@ def run():
 
     rate = rospy.Rate(20)
     count = 0
-    h2_vx = 1
+    h2_vx = 0.0
     theta = 0.0
-    acc = 0.0
+    acc = 0.01
     while not rospy.is_shutdown():
         # try:
         #     (trans, rot) = tf_listener.lookupTransform('/map', '/h2/odom', rospy.Time(0))
@@ -237,8 +237,7 @@ def run():
 
         # print(h2_odom)
         # print(h3_odom)
-        if h2_odom is not None and h3_odom is not None:
-
+        if h2_odom is not None:
             msg = ObstacleArrayMsg()
             msg.header = h2_odom.header
             nowTime = rospy.Time.now().secs
@@ -277,7 +276,7 @@ def run():
             msg = PoseStamped()
             msg.header.seq = count
             msg.header.frame_id = "map"
-            msg.pose.position.x = -4
+            msg.pose.position.x = -3
             msg.pose.position.y = 0
             msg.pose.orientation.x = 0.0
             msg.pose.orientation.y = 0.0
@@ -303,7 +302,7 @@ def run():
             msg_h3.linear.x = 0.30#use teb set it 0.30,use steb set it 0.45
             msg_h3.angular.z = 0.0
             #pub_h3.publish(msg_h3)
-        if count >= 400:
+        if count >= 600:
             h2_vx=0
         count += 1
         # save_position()

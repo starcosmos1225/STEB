@@ -806,7 +806,7 @@ void TebOptimalPlanner::AddEdgesDynamicObstacles(double weight_multiplier,bool d
         
         Eigen::Vector3d point(teb_.Pose(j).x(),teb_.Pose(j).y(),teb_.Pose(j).t());
         double scale =(dynamic_obstacles[i+1]->getCentroid()-dynamic_obstacles[i]->getCentroid() ).norm()/
-                (dynamic_obstacles[i+1]->getTime()-dynamic_obstacles[i]->getTime())/cfg_->robot.max_vel_x;
+                (dynamic_obstacles[i+1]->getTime()-dynamic_obstacles[i]->getTime())/(cfg_->robot.max_vel_x);
         double dist=distance_point_to_segment_3d(point,dynamic_obstacles[i]->getCentroid3D(),dynamic_obstacles[i+1]->getCentroid3D(),true,scale);
         if (dist<min_dist&&dist>0)
         {

@@ -106,6 +106,7 @@ public:
       double radius_obstacles = obst1->getCircumscribedRadius();
       // ROS_INFO("robot:%lf obst:%lf",radius_robot,radius_obstacles);
       double scale = (line_end-line_start).norm()/(obst2->getTime()-obst1->getTime())/cfg_->robot.max_vel_x;
+      //scale = 0.1;
       Eigen::Vector3d line_start3d(line_start[0],line_start[1],scale*obst1->getTime());
       Eigen::Vector3d line_end3d(line_end[0],line_end[1],scale*obst2->getTime());
       Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],scale*bandpt->t());
@@ -114,11 +115,13 @@ public:
       // Eigen::Vector3d cross_point;
       //dist_ = std::max(1e-6,computeDistPointToLine3d(robot_point3d,line_start3d,line_end3d,&cross_point));
       dist_ = std::max(1e-6,distance_point_to_segment_3d(robot_point3d,line_start3d,line_end3d));
+      double min_obstacle_dist = (radius_robot+radius_obstacles) + cfg_->obstacles.min_obstacle_dist;
+
       //ROS_INFO("dist_:%lf",dist_);
       // cross_line _ = cross_point - robot_point3d;
       // ROS_INFO("radius:%lf",cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles);
-      _error[0] = penaltyBoundFromBelow(dist_, cfg_->obstacles.min_obstacle_dist+radius_robot+radius_obstacles, cfg_->optim.penalty_epsilon);
-      _error[1] = penaltyBoundFromBelow(dist_, cfg_->obstacles.dynamic_obstacle_inflation_dist+radius_robot+radius_obstacles, 0.0);
+      _error[0] = penaltyBoundFromBelow(dist_, min_obstacle_dist, cfg_->optim.penalty_epsilon);
+      _error[1] = penaltyBoundFromBelow(dist_, min_obstacle_dist, 0.0);
       if (cfg_->optim.obstacle_cost_exponent != 1.0 && cfg_->obstacles.min_obstacle_dist > 0.0)
       {
         // Optional non-linear cost. Note the max cost (before weighting) is
