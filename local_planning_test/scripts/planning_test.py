@@ -165,7 +165,7 @@ def computelinearVelocity(dt, vx, vy, position, acc_x, acc_y, time):
     h2_obstacles.polygon.points.append(point)
     h2_obstacles.radius = 0.5
     h2_obstacles.velocities = h2_odom.twist
-    #print("h2:{} {} {} vx {} vy {}".format(point.x,point.y,point.z,vx,vy))
+    #print("h2:{} {} {} vx {} vy {} acc_x {} acc_y {}".format(point.x,point.y,point.z,vx,vy,acc_x,acc_y))
     h2_obstacles.orientation = h2_odom.pose.pose.orientation
     return h2_obstacles, vx, vy, position
 
@@ -224,9 +224,9 @@ def run():
 
     rate = rospy.Rate(20)
     count = 0
-    h2_vx = 0.0
-    theta = 0.0
-    acc = 0.01
+    h2_vx = 1.0
+    theta = 0.5
+    acc = 0
     while not rospy.is_shutdown():
         # try:
         #     (trans, rot) = tf_listener.lookupTransform('/map', '/h2/odom', rospy.Time(0))
@@ -266,8 +266,8 @@ def run():
                     teb_msg.obstacles.append(h2_obstacles)
                     msg.obstacles.append(h2_obstacles)
                 else:
-                    h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
-                    #h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
+                    #h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
+                    h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
                     msg.obstacles.append(h2_obstacles)
             pub_h1_obstacless.publish(msg)
             #pub_h1_obstacless.publish(teb_msg)
@@ -276,7 +276,7 @@ def run():
             msg = PoseStamped()
             msg.header.seq = count
             msg.header.frame_id = "map"
-            msg.pose.position.x = -3
+            msg.pose.position.x = 0
             msg.pose.position.y = 0
             msg.pose.orientation.x = 0.0
             msg.pose.orientation.y = 0.0
@@ -302,7 +302,7 @@ def run():
             msg_h3.linear.x = 0.30#use teb set it 0.30,use steb set it 0.45
             msg_h3.angular.z = 0.0
             #pub_h3.publish(msg_h3)
-        if count >= 600:
+        if count >= 900:
             h2_vx=0
         count += 1
         # save_position()

@@ -106,15 +106,16 @@ public:
       double radius_obstacles = obst1->getCircumscribedRadius();
       // ROS_INFO("robot:%lf obst:%lf",radius_robot,radius_obstacles);
       double scale = (line_end-line_start).norm()/(obst2->getTime()-obst1->getTime())/cfg_->robot.max_vel_x;
-      //scale = 0.1;
-      Eigen::Vector3d line_start3d(line_start[0],line_start[1],scale*obst1->getTime());
-      Eigen::Vector3d line_end3d(line_end[0],line_end[1],scale*obst2->getTime());
-      Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],scale*bandpt->t());
+      //scale = 0.2;
+      Eigen::Vector3d line_start3d(line_start[0],line_start[1],obst1->getTime());
+      Eigen::Vector3d line_end3d(line_end[0],line_end[1],obst2->getTime());
+      Eigen::Vector3d robot_point3d(robot_point[0],robot_point[1],bandpt->t());
       dv_ = line_end3d-line_start3d;
       dv_.normalize();
       // Eigen::Vector3d cross_point;
       //dist_ = std::max(1e-6,computeDistPointToLine3d(robot_point3d,line_start3d,line_end3d,&cross_point));
-      dist_ = std::max(1e-6,distance_point_to_segment_3d(robot_point3d,line_start3d,line_end3d));
+      //ROS_ERROR("scale:%lf",scale);
+      dist_ = std::max(1e-6,distance_point_to_segment_3d(robot_point3d,line_start3d,line_end3d,false,scale));
       double min_obstacle_dist = (radius_robot+radius_obstacles) + cfg_->obstacles.min_obstacle_dist;
 
       //ROS_INFO("dist_:%lf",dist_);

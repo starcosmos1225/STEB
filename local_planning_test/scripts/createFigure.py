@@ -179,14 +179,14 @@ def drawFig3_2():
     plt.show()
 
 def drawFig4_1_1():
-    fr_teb = open("tseb_accelerate.txt", "r")
-    fr_tseb = open("tseb_st_accelerate.txt", "r")
+    fr_teb = open("test.txt", "r")
+    fr_tseb = open("tseb_decelerate.txt", "r")
     lines_teb = fr_teb.readlines()
     lines_tseb = fr_tseb.readlines()
     length = min(len(lines_teb), len(lines_tseb))
     data1 =  np.zeros((length, 3))
     data2 = np.zeros((length, 3))
-    data_ob = np.zeros((length-100, 3))
+    data_ob = np.zeros((length, 3))
     index = 0
     plt.cla()
     ax.set_xlim(0, 4)
@@ -203,7 +203,7 @@ def drawFig4_1_1():
         data2[index, 1] = eval(l1[1])
         data2[index, 2] = eval(l[4])*1.0/(1e9)
         #print(data2[index, 2])
-        if i >= 0 and i < length-100:
+        if i >= 0 and i < length:
             data_ob[index-0, 0] = eval(l[2])
             data_ob[index-0, 1] = eval(l[3])
             data_ob[index-0, 2] = eval(l[4])*1.0/(1e9)
@@ -211,7 +211,7 @@ def drawFig4_1_1():
         #print(eval(l[4]))
         #t = input("wait for key")
     drawCurve(data_ob, c='deepskyblue', l='Obstacle')
-    drawCurve(data1, c='salmon', l='TEB')
+    drawCurve(data1, c='salmon', l='TSEB-ST')
     drawCurve(data2, c='crimson', l='TSEB')
     plt.legend()
     plt.draw()
@@ -255,7 +255,7 @@ def drawFig_test():
                 plt.cla()
                 ax.set_xlim(0,4)
                 ax.set_ylim(-2,2)
-                ax.set_zlim(140, 160)
+                ax.set_zlim(140, 180)
                 p = np.zeros((length,3))
                 for i in range(length):
                     p[i,:] = points[i,:]
@@ -291,5 +291,5 @@ def drawFig_test():
     fr.close()
 
 if __name__=='__main__':
-    #drawFig_test()
-    drawFig4_1_1()
+    drawFig_test()
+    #drawFig4_1_1()
