@@ -225,8 +225,8 @@ def run():
     rate = rospy.Rate(20)
     count = 0
     h2_vx = 1.0
-    theta = 0.5
-    acc = 0
+    theta = 0
+    acc = -0.0035
     while not rospy.is_shutdown():
         # try:
         #     (trans, rot) = tf_listener.lookupTransform('/map', '/h2/odom', rospy.Time(0))
@@ -266,8 +266,8 @@ def run():
                     teb_msg.obstacles.append(h2_obstacles)
                     msg.obstacles.append(h2_obstacles)
                 else:
-                    #h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
-                    h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
+                    h2_obstacles, vx, vy, position = computelinearVelocity(dynamic_dt,vx,vy,position,acc_x,acc_y,nowTime + dynamic_dt*i)
+                    #h2_obstacles, angular = computeCircle(dynamic_dt,angular,theta,nowTime + dynamic_dt*i)
                     msg.obstacles.append(h2_obstacles)
             pub_h1_obstacless.publish(msg)
             #pub_h1_obstacless.publish(teb_msg)
@@ -276,7 +276,7 @@ def run():
             msg = PoseStamped()
             msg.header.seq = count
             msg.header.frame_id = "map"
-            msg.pose.position.x = 0
+            msg.pose.position.x = -3
             msg.pose.position.y = 0
             msg.pose.orientation.x = 0.0
             msg.pose.orientation.y = 0.0

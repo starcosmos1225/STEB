@@ -179,8 +179,8 @@ def drawFig3_2():
     plt.show()
 
 def drawFig4_1_1():
-    fr_teb = open("test.txt", "r")
-    fr_tseb = open("tseb_decelerate.txt", "r")
+    fr_teb = open("tseb_st_circle.txt", "r")
+    fr_tseb = open("tseb_circle.txt", "r")
     lines_teb = fr_teb.readlines()
     lines_tseb = fr_tseb.readlines()
     length = min(len(lines_teb), len(lines_tseb))
@@ -189,9 +189,9 @@ def drawFig4_1_1():
     data_ob = np.zeros((length, 3))
     index = 0
     plt.cla()
-    ax.set_xlim(0, 4)
+    ax.set_xlim(0, 8)
     ax.set_ylim(-2, 2)
-    ax.set_zlim(140, 170)
+    ax.set_zlim(150, 190)
     for i in range(length):
         l = lines_teb[i].strip().split()
         l1 = lines_tseb[i].strip().split()
@@ -204,8 +204,8 @@ def drawFig4_1_1():
         data2[index, 2] = eval(l[4])*1.0/(1e9)
         #print(data2[index, 2])
         if i >= 0 and i < length:
-            data_ob[index-0, 0] = eval(l[2])
-            data_ob[index-0, 1] = eval(l[3])
+            data_ob[index-0, 0] = eval(l1[2])
+            data_ob[index-0, 1] = eval(l1[3])
             data_ob[index-0, 2] = eval(l[4])*1.0/(1e9)
         index+=1
         #print(eval(l[4]))
@@ -253,9 +253,9 @@ def drawFig_test():
                 first=False
             else:
                 plt.cla()
-                ax.set_xlim(0,4)
+                ax.set_xlim(0,8)
                 ax.set_ylim(-2,2)
-                ax.set_zlim(140, 180)
+                ax.set_zlim(150, 155)
                 p = np.zeros((length,3))
                 for i in range(length):
                     p[i,:] = points[i,:]
@@ -271,9 +271,6 @@ def drawFig_test():
                 data = np.zeros((dynamic_predict_no,3))
                 points = np.zeros((max_point_no,3))
                 edges=[]
-                
-                
-
             continue
         l = line.strip().split()
         if len(l)<2:
@@ -291,5 +288,5 @@ def drawFig_test():
     fr.close()
 
 if __name__=='__main__':
-    drawFig_test()
-    #drawFig4_1_1()
+    #drawFig_test()
+    drawFig4_1_1()
